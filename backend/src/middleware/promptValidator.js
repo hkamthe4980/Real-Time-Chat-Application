@@ -10,7 +10,7 @@ const SUSPICIOUS_PATTERNS = [
 
 export function validatePrompt(prompt, opts = {}) {
     console.log("Validate Prompt" , prompt)
-  const maxLen = opts.maxLength || 20;
+  const maxLen = opts.maxLength || 100;
   if (typeof prompt !== "string" || prompt.trim().length === 0) {
     return { error: true, reason: "Prompt required" };
   }

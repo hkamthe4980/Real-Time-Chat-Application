@@ -3,6 +3,7 @@ import cors from 'cors';
 import chatRoutes from '../src/routes/chatRoutes.js';
 import authRoutes from '../src/routes/authRoutes.js';
 import analyticsRoutes from '../src/routes/analyticsRoutes.js';
+import tokenRoutes from "../src/routes/tokenRoutes.js"
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use('/api/chat', chatRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api', tokenRoutes);
 app.get('/', (req, res) => {
   res.send('LLM Streaming Backend Running ');
 });

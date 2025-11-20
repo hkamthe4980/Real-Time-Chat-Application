@@ -13,7 +13,7 @@ export  function countTokens(text){
     }
 }
 
-export function countMessageTokens(messages) {
+export  function countMessageTokens(messages) {
     console.log("Counting tokens for messages:", messages);
   let total = 0;
   messages.forEach(msg => {

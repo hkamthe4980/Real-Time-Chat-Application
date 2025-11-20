@@ -16,7 +16,7 @@ export const registerUser = async (req, res) => {
 
 
 
-        await UserToken.create({ userId: newUser._id, planType: "free", tokenBudget: 8000 });
+        await UserToken.create({ userId: newUser._id, planType: "free", tokenBudget: 4000 });
 
 
         return res.status(201).json({ message: "User registered", userId: newUser._id });

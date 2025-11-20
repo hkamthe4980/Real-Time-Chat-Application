@@ -12,7 +12,7 @@ export default function SignupPage() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      await apiRequest("/auth/signup", "POST", { name, email, password });
+      await apiRequest("/auth/register", "POST", { name, email, password });
       alert("Signup successful! Please log in.");
       router.push("/");
     } catch {

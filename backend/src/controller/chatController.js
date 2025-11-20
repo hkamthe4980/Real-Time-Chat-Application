@@ -1,11 +1,18 @@
 
+
 import { getLLMStream } from "../services/llmService.js";
 import { sendStreamChunk } from "../utils/streamHandler.js";
-import { countMessageTokens, countTokens } from "../services/tokenService.js";
+import { countMessageTokens } from "../services/tokenService.js";
 import Conversation from "../models/conversationModel.js";
 import Message from "../models/messageModel.js";
 import UserToken from "../models/userTokenModel.js";
-import {validatePrompt} from "../middleware/promptValidator.js"
+import { validatePrompt } from "../middleware/promptValidator.js";
+
+// Used for sending budget-specific SSE message
+const sendBudgetEvent = (res, payload) => {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+};
+
 export const streamChatResponse = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
   res.setHeader("Content-Type", "text/event-stream");
@@ -16,8 +23,9 @@ export const streamChatResponse = async (req, res) => {
   try {
     const userId = req.user.id;
     let { prompt, conversationId } = req.query;
+    console.log("------------request query-------------",req.query)
+    console.log("----------main conversation Id -------------" , conversationId)
 
-    // 🧹 Sanitize conversationId
     if (conversationId) {
       conversationId = conversationId.trim();
       if (conversationId === "undefined" || conversationId === "") {
@@ -25,21 +33,14 @@ export const streamChatResponse = async (req, res) => {
       }
     }
 
-    
-    // validate
+    // 🛡 Prompt validation
     const validation = validatePrompt(prompt);
     if (validation) {
-      console.log("validation prompt" , validation.reason)
       sendStreamChunk(res, { error: validation.reason });
       return res.end();
     }
 
-    // if (!prompt) {
-    //   res.write(`data: ${JSON.stringify({ error: "Prompt required" })}\n\n`);
-    //   return res.end();
-    // }
-
-    // ✅ Get or create user token record
+    // 🔍 Get user token model
     let userToken = await UserToken.findOne({ userId });
     if (!userToken) {
       userToken = await UserToken.create({
@@ -50,67 +51,134 @@ export const streamChatResponse = async (req, res) => {
       });
     }
 
-    // // ✅ Calculate remaining budget before generating
-    // const remaining = userToken.tokenBudget - userToken.tokensUsed;
-    const usagePercent = (userToken.tokensUsed / userToken.tokenBudget) * 100;
-
-    // 🟡 Send warnings if applicable
-    if (usagePercent >= 100) {
-      sendStreamChunk(res, {
-        error: "Token budget exhausted.",
-        suggestion: "Upgrade your plan or wait for daily reset.",
-      });
-      return res.end();
-    } else if (usagePercent >= 90) {
-      sendStreamChunk(res, { warning: " 90% of your token budget used." });
-    } else if (usagePercent >= 75) {
-      sendStreamChunk(res, { warning: " 75% of your token budget used." });
-    }
-
-    //  System + User messages
-    const start = Date.now();
     const systemPrompt = "You are a helpful AI assistant.";
     const messages = [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ];
 
+    // 📌 Pre-calc input tokens BEFORE calling LLM
+    const inputTokens = countMessageTokens(messages);
+
+    const estimatedOutput = 500; // assume 500 output tokens
+    const estimatedTotal = inputTokens + estimatedOutput;
+
+    const remainingTokens = userToken.tokenBudget - userToken.tokensUsed;
+
+    // 🚨 NEW CORRECT BUDGET CHECK (before LLM call)
+    if (estimatedTotal > remainingTokens) {
+      let resetAt = userToken.resetAt;
+if (!resetAt) {
+  const now = new Date();
+  resetAt = new Date(now);
+  resetAt.setUTCHours(24, 0, 0, 0); // Next UTC midnight
+}
+sendBudgetEvent(res, {
+  type: "budget_exhausted",
+  message: "This message will exceed your token budget.",
+  details: {
+    inputTokens,
+    estimatedOutput,
+    estimatedTotal,
+    tokenBudget: userToken.tokenBudget,
+    tokensUsed: userToken.tokensUsed,
+    remainingTokens,
+    conversationId: conversationId || null,
+    resetAt,
+  },
+  options: [
+    { id: "start_new", label: "Start new conversation" },
+    { id: "delete_conv", label: "Delete a conversation" },
+    { id: "summarize", label: "Summarize & continue" },
+    { id: "upgrade", label: "Upgrade plan" }
+  ]
+});
+
+      return res.end();
+    }
 
 
+    const start = Date.now();
+    let timeoutId;
+    let responseReceived = false;
 
-    //  Start LLM Stream
+    // Set timeout for 30 seconds
+    const TIMEOUT_DURATION = 30000;
+    timeoutId = setTimeout(() => {
+      if (!responseReceived) {
+        console.error("❌ Response timeout after 30s");
+        sendStreamChunk(res, {
+          error: "Response generation timeout",
+          suggestion: "Try with a simpler question?",
+          preserveMessage: true
+        });
+        res.end();
+      }
+    }, TIMEOUT_DURATION);
+
     const stream = getLLMStream(prompt);
     let firstToken = true;
     let outputText = "";
     let outputTokens = 0;
 
     for await (const chunk of stream) {
-      if (firstToken) {
-        const ttft = Date.now() - start;
-        console.log(`✅ TTFT: ${ttft}ms`);
-        firstToken = false;
-      }
+        if (chunk.error) {
+          clearTimeout(timeoutId);
+          responseReceived = true;
+          
+          // Handle different error types
+          const errorMsg = chunk.error;
+          if (errorMsg.includes("429") || errorMsg.includes("rate limit")) {
+            sendStreamChunk(res, {
+              error: "Service busy, please wait...",
+              type: "rate_limit",
+              retryAfter: 5000 // Default 5s retry
+            });
+          } else if (errorMsg.includes("400")) {
+            sendStreamChunk(res, {
+              error: "Invalid request, please try again",
+              type: "bad_request"
+            });
+          } else if (errorMsg.includes("403")) {
+            sendStreamChunk(res, {
+              error: "Service authentication failed",
+              type: "auth_error"
+            });
+          } else if (errorMsg.includes("500") || errorMsg.includes("502") || errorMsg.includes("503")) {
+            sendStreamChunk(res, {
+              error: "Service temporarily unavailable",
+              type: "service_error",
+              retryAfter: 10000
+            });
+          } else {
+            sendStreamChunk(res, { error: errorMsg });
+          }
+          res.end();
+          return;
+        }
+
+        if (firstToken) {
+          clearTimeout(timeoutId);
+          responseReceived = true;
+          const ttft = Date.now() - start;
+          console.log(`TTFT: ${ttft}ms`);
+          firstToken = false;
+        }
 
       if (chunk.text) {
-
-        // outputText += countTokens(chunk.text)
         outputText += chunk.text;
-        outputTokens = outputTokens + 1
+        outputTokens += 1;
         sendStreamChunk(res, { text: chunk.text });
       }
     }
 
-
-    const inputTokens = countMessageTokens(messages);
-    console.log(`🪙 Input Tokens: ${inputTokens}`);
-
-
+    // Save conversation
     let conversation = conversationId
       ? await Conversation.findById(conversationId)
       : await Conversation.create({
-        userId,
-        title: prompt.slice(0, 40) + "...",
-      });
+          userId,
+          title: prompt.slice(0, 40) + "...",
+        });
 
     // Save user message
     await Message.create({
@@ -122,12 +190,10 @@ export const streamChatResponse = async (req, res) => {
       totalTokens: inputTokens,
     });
 
-
-
     const totalTokens = inputTokens + outputTokens;
     const generationTime = (Date.now() - start) / 1000;
 
-    // 💾 Save assistant response
+    // Save assistant response
     await Message.create({
       conversationId: conversation._id,
       userId,
@@ -138,41 +204,53 @@ export const streamChatResponse = async (req, res) => {
       totalTokens,
     });
 
-    // 📊 Update conversation token usage
     conversation.totalTokens += totalTokens;
     await conversation.save();
 
-    // 🪙 Update user's token record
     userToken.tokensUsed += totalTokens;
     await userToken.save();
 
-    const newRemaining = userToken.tokenBudget - userToken.tokensUsed;
-    const newUsagePercent = (userToken.tokensUsed / userToken.tokenBudget) * 100;
-
-    // 📤 Send metadata to frontend
+    // Send usage info
     sendStreamChunk(res, {
       usage: {
         inputTokens,
         outputTokens,
-
         totalTokens,
         generationTime,
-        remainingTokens: newRemaining,
-        usagePercent: newUsagePercent.toFixed(1),
+        remainingTokens: userToken.tokenBudget - userToken.tokensUsed,
+        usagePercent: (
+          (userToken.tokensUsed / userToken.tokenBudget) * 100
+        ).toFixed(1),
       },
     });
-
-    if (newUsagePercent >= 90)
-      sendStreamChunk(res, { warning: "🚨 You’ve used 90% of your token limit!" });
 
     res.write("data: [DONE]\n\n");
     res.end();
   } catch (error) {
-    console.error("❌ Chat Stream Error:", error);
-    res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+    clearTimeout(timeoutId);
+    responseReceived = true;
+    console.error("Chat Stream Error:", error);
+    
+    // Handle specific error types
+    if (error.message.includes("timeout") || error.code === 'ETIMEDOUT') {
+      sendStreamChunk(res, {
+        error: "Response generation timeout",
+        suggestion: "Try with a simpler question?",
+        preserveMessage: true
+      });
+    } else if (error.status === 429) {
+      sendStreamChunk(res, {
+        error: "Service busy, please wait...",
+        type: "rate_limit",
+        retryAfter: error.headers?.['retry-after'] || 5000
+      });
+    } else {
+      sendStreamChunk(res, { error: error.message });
+    }
     res.end();
   }
 };
+
 
 
 
@@ -199,6 +277,7 @@ export const getChatHistory = async (req, res) => {
           const messages = await Message.find({ conversationId: conv._id })
             .sort({ createdAt: 1 })
             .select("sender content totalTokens createdAt");
+            console.log("----chat reponse-----",messages)
           return {
             _id: conv._id,
             title: conv.title,
@@ -232,6 +311,46 @@ export const getChatHistory = async (req, res) => {
   } catch (error) {
     console.error("❌ Error fetching chat history:", error);
     res.status(500).json({ success: false, error: "Failed to fetch chat history" });
+  }
+};
+
+// Fetch messages for a specific conversation
+export const getConversationMessages = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { conversationId } = req.params;
+
+    // Verify conversation belongs to user
+    const conversation = await Conversation.findOne({ _id: conversationId, userId });
+    if (!conversation) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "Conversation not found or access denied" 
+      });
+    }
+
+    // Fetch all messages for this conversation
+    const messages = await Message.find({ conversationId })
+      .sort({ createdAt: 1 })
+      .select("sender content totalTokens createdAt");
+
+    res.json({
+      success: true,
+      conversation: {
+        _id: conversation._id,
+        title: conversation.title,
+        totalTokens: conversation.totalTokens,
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+      },
+      messages,
+    });
+  } catch (error) {
+    console.error("getConversationMessages error:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to fetch conversation messages" 
+    });
   }
 };
 
