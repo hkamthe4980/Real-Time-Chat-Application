@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// Add Group Chat nav link
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -47,7 +48,11 @@ export default function Navbar() {
         {isLoggedIn && (
           <>
             {navLink("/chat", "Chat")}
+            {navLink("/group-chat", "Group Chat")}
             {navLink("/analytics", "Analytics")}
+            {navLink("/GetDataFromApi", "GetDataFromApi")}
+            {navLink("/ToDoTask", "ToDoTask")}
+            {navLink("/mobile", "MobileGroupChat")}
           
           </>
         )}

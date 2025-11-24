@@ -4,7 +4,7 @@ const BASE_URL = "/api"; // Next.js will rewrite → backend http://localhost:50
 
 /**
  * Generic API Request Handler
- */
+*/
 export async function apiRequest(endpoint, method = "GET", body = null) {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -20,7 +20,7 @@ export async function apiRequest(endpoint, method = "GET", body = null) {
   if (body) {
     options.body = JSON.stringify(body);
   }
-
+                                         
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, options);
 
@@ -33,7 +33,7 @@ export async function apiRequest(endpoint, method = "GET", body = null) {
 
     return data;
   } catch (error) {
-    console.error("❌ API Error:", error.message);
+    console.error(" API Error:", error.message);
     throw error;
   }
 }
@@ -92,3 +92,38 @@ export const fetchCostEstimate = async () => {
   return await apiRequest(`/tokens/cost`, "GET");
 };
 
+
+
+/**
+ * Search members inside a group (for @mention)
+ */
+export const searchGroupMembers = async (groupId, query) => {
+  return await apiRequest(
+    `/groups/${groupId}/members/search?q=${encodeURIComponent(query)}`,
+    "GET"
+  );
+};
+
+
+
+/**
+ * Send message with text + mentions
+ */
+export const sendGroupMessage = async (payload) => {
+  return await apiRequest(`/messages/send`, "POST", payload);
+};
+
+// console.log("sendGroupMessage" , sendGroupMessage)
+
+// export const getGroupMessages = async (groupId) => {
+//   return await apiRequest(`/messages/group/${groupId}`, "GET");
+// };
+/**
+ * Fetch all group messages
+ */
+export const getGroupMessages = async (groupId) => {
+  return await apiRequest(`/messages/group/${groupId}`, "GET");
+};
+export const getUserGroupsWithLastMessage = async () => {
+  return await apiRequest(`/messages/get-groups`, "GET");
+};

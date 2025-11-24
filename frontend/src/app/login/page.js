@@ -6,6 +6,7 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+ 
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function LoginPage() {
     try {
       const res = await apiRequest("/auth/login", "POST", { email, password });
       localStorage.setItem("token", res.token);
-      router.push("/chat");
+      router.push("/mobile");
     } catch (err) {
       setError("Invalid credentials, please try again.");
     }

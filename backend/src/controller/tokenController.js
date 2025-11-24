@@ -3,10 +3,7 @@ import UserToken from "../models/userTokenModel.js";
 import Conversation from "../models/conversationModel.js";
 import Message from "../models/messageModel.js";
 
-/**
- * GET /api/user/token
- * return token budget status
- */
+
 export const getUserTokenStatus = async (req, res) => {
   try {
     const userId = req.user.id;

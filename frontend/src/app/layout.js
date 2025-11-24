@@ -24,9 +24,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-gradient-to-r from-indigo-50 via-white to-indigo-100 pt-16 font-sans">
-        <Navbar />
-        <main className="px-4 sm:px-6 lg:px-8">{children}</main>
+      <body className="bg-gradient-to-r from-indigo-50 via-white to-indigo-100 font-sans">
+        {/* <Navbar /> */}
+        {/* <main className="px-4 sm:px-6 lg:px-8">{children}</main> */}
+        <main>{children}</main>
       </body>
     </html>
   );

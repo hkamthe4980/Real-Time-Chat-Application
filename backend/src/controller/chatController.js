@@ -8,7 +8,7 @@ import Message from "../models/messageModel.js";
 import UserToken from "../models/userTokenModel.js";
 import { validatePrompt } from "../middleware/promptValidator.js";
 
-// Used for sending budget-specific SSE message
+
 const sendBudgetEvent = (res, payload) => {
   res.write(`data: ${JSON.stringify(payload)}\n\n`);
 };
@@ -23,8 +23,8 @@ export const streamChatResponse = async (req, res) => {
   try {
     const userId = req.user.id;
     let { prompt, conversationId } = req.query;
-    console.log("------------request query-------------",req.query)
-    console.log("----------main conversation Id -------------" , conversationId)
+    console.log("------------request query-------------", req.query)
+    console.log("----------main conversation Id -------------", conversationId)
 
     if (conversationId) {
       conversationId = conversationId.trim();
@@ -68,31 +68,31 @@ export const streamChatResponse = async (req, res) => {
     // 🚨 NEW CORRECT BUDGET CHECK (before LLM call)
     if (estimatedTotal > remainingTokens) {
       let resetAt = userToken.resetAt;
-if (!resetAt) {
-  const now = new Date();
-  resetAt = new Date(now);
-  resetAt.setUTCHours(24, 0, 0, 0); // Next UTC midnight
-}
-sendBudgetEvent(res, {
-  type: "budget_exhausted",
-  message: "This message will exceed your token budget.",
-  details: {
-    inputTokens,
-    estimatedOutput,
-    estimatedTotal,
-    tokenBudget: userToken.tokenBudget,
-    tokensUsed: userToken.tokensUsed,
-    remainingTokens,
-    conversationId: conversationId || null,
-    resetAt,
-  },
-  options: [
-    { id: "start_new", label: "Start new conversation" },
-    { id: "delete_conv", label: "Delete a conversation" },
-    { id: "summarize", label: "Summarize & continue" },
-    { id: "upgrade", label: "Upgrade plan" }
-  ]
-});
+      if (!resetAt) {
+        const now = new Date();
+        resetAt = new Date(now);
+        resetAt.setUTCHours(24, 0, 0, 0); // Next UTC midnight
+      }
+      sendBudgetEvent(res, {
+        type: "budget_exhausted",
+        message: "This message will exceed your token budget.",
+        details: {
+          inputTokens,
+          estimatedOutput,
+          estimatedTotal,
+          tokenBudget: userToken.tokenBudget,
+          tokensUsed: userToken.tokensUsed,
+          remainingTokens,
+          conversationId: conversationId || null,
+          resetAt,
+        },
+        options: [
+          { id: "start_new", label: "Start new conversation" },
+          { id: "delete_conv", label: "Delete a conversation" },
+          { id: "summarize", label: "Summarize & continue" },
+          { id: "upgrade", label: "Upgrade plan" }
+        ]
+      });
 
       return res.end();
     }
@@ -122,48 +122,48 @@ sendBudgetEvent(res, {
     let outputTokens = 0;
 
     for await (const chunk of stream) {
-        if (chunk.error) {
-          clearTimeout(timeoutId);
-          responseReceived = true;
-          
-          // Handle different error types
-          const errorMsg = chunk.error;
-          if (errorMsg.includes("429") || errorMsg.includes("rate limit")) {
-            sendStreamChunk(res, {
-              error: "Service busy, please wait...",
-              type: "rate_limit",
-              retryAfter: 5000 // Default 5s retry
-            });
-          } else if (errorMsg.includes("400")) {
-            sendStreamChunk(res, {
-              error: "Invalid request, please try again",
-              type: "bad_request"
-            });
-          } else if (errorMsg.includes("403")) {
-            sendStreamChunk(res, {
-              error: "Service authentication failed",
-              type: "auth_error"
-            });
-          } else if (errorMsg.includes("500") || errorMsg.includes("502") || errorMsg.includes("503")) {
-            sendStreamChunk(res, {
-              error: "Service temporarily unavailable",
-              type: "service_error",
-              retryAfter: 10000
-            });
-          } else {
-            sendStreamChunk(res, { error: errorMsg });
-          }
-          res.end();
-          return;
-        }
+      if (chunk.error) {
+        clearTimeout(timeoutId);
+        responseReceived = true;
 
-        if (firstToken) {
-          clearTimeout(timeoutId);
-          responseReceived = true;
-          const ttft = Date.now() - start;
-          console.log(`TTFT: ${ttft}ms`);
-          firstToken = false;
+        // Handle different error types
+        const errorMsg = chunk.error;
+        if (errorMsg.includes("429") || errorMsg.includes("rate limit")) {
+          sendStreamChunk(res, {
+            error: "Service busy, please wait...",
+            type: "rate_limit",
+            retryAfter: 5000 // Default 5s retry
+          });
+        } else if (errorMsg.includes("400")) {
+          sendStreamChunk(res, {
+            error: "Invalid request, please try again",
+            type: "bad_request"
+          });
+        } else if (errorMsg.includes("403")) {
+          sendStreamChunk(res, {
+            error: "Service authentication failed",
+            type: "auth_error"
+          });
+        } else if (errorMsg.includes("500") || errorMsg.includes("502") || errorMsg.includes("503")) {
+          sendStreamChunk(res, {
+            error: "Service temporarily unavailable",
+            type: "service_error",
+            retryAfter: 10000
+          });
+        } else {
+          sendStreamChunk(res, { error: errorMsg });
         }
+        res.end();
+        return;
+      }
+
+      if (firstToken) {
+        clearTimeout(timeoutId);
+        responseReceived = true;
+        const ttft = Date.now() - start;
+        console.log(`TTFT: ${ttft}ms`);
+        firstToken = false;
+      }
 
       if (chunk.text) {
         outputText += chunk.text;
@@ -176,9 +176,9 @@ sendBudgetEvent(res, {
     let conversation = conversationId
       ? await Conversation.findById(conversationId)
       : await Conversation.create({
-          userId,
-          title: prompt.slice(0, 40) + "...",
-        });
+        userId,
+        title: prompt.slice(0, 40) + "...",
+      });
 
     // Save user message
     await Message.create({
@@ -230,7 +230,7 @@ sendBudgetEvent(res, {
     clearTimeout(timeoutId);
     responseReceived = true;
     console.error("Chat Stream Error:", error);
-    
+
     // Handle specific error types
     if (error.message.includes("timeout") || error.code === 'ETIMEDOUT') {
       sendStreamChunk(res, {
@@ -277,7 +277,7 @@ export const getChatHistory = async (req, res) => {
           const messages = await Message.find({ conversationId: conv._id })
             .sort({ createdAt: 1 })
             .select("sender content totalTokens createdAt");
-            console.log("----chat reponse-----",messages)
+          console.log("----chat reponse-----", messages)
           return {
             _id: conv._id,
             title: conv.title,
@@ -323,9 +323,9 @@ export const getConversationMessages = async (req, res) => {
     // Verify conversation belongs to user
     const conversation = await Conversation.findOne({ _id: conversationId, userId });
     if (!conversation) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "Conversation not found or access denied" 
+      return res.status(404).json({
+        success: false,
+        error: "Conversation not found or access denied"
       });
     }
 
@@ -347,9 +347,9 @@ export const getConversationMessages = async (req, res) => {
     });
   } catch (error) {
     console.error("getConversationMessages error:", error);
-    res.status(500).json({ 
-      success: false, 
-      error: "Failed to fetch conversation messages" 
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch conversation messages"
     });
   }
 };

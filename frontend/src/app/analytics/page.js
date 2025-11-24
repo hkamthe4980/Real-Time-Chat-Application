@@ -29,7 +29,7 @@ export default function AnalyticsPage() {
     };
     fetchData();
   }, []);
-  console.log("Total Summary" , summary)
+  console.log("Total Summary" , summary);
 
   if (loading)
     return <div className="flex justify-center items-center h-screen text-indigo-600">Loading analytics...</div>;

@@ -1,7 +1,7 @@
 import Message from "../models/messageModel.js";
 import UserToken from "../models/userTokenModel.js";
 import mongoose from "mongoose";
-// Utility to get date range
+
 const getDateRange = (days) => {
   const now = new Date();
   const past = new Date(now);
@@ -9,7 +9,7 @@ const getDateRange = (days) => {
   return { from: past, to: now };
 };
 
-// ✅ 1️⃣ Get Daily/Weekly/Monthly Token Summary
+
 export const getTokenUsageSummary = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -17,7 +17,7 @@ export const getTokenUsageSummary = async (req, res) => {
     console.log("tokenSummary", userId)
     const { from, to } = getDateRange(30);
 
-    // Aggregate message tokens by date
+
     const usage = await Message.aggregate([
       { $match: { userId: new mongoose.Types.ObjectId(userId.toString()), createdAt: { $gte: from, $lte: to } } },
       {
@@ -30,7 +30,7 @@ export const getTokenUsageSummary = async (req, res) => {
     ]);
     console.log("Usage", usage)
 
-    // Get today's, week's, and month's total tokens
+  
     const todayRange = getDateRange(1);
     const weekRange = getDateRange(7);
     const monthRange = getDateRange(30);
@@ -52,7 +52,7 @@ export const getTokenUsageSummary = async (req, res) => {
     console.log("today", today);
     console.log("week", week);
 
-    // Get current usage and plan
+
     const userToken = await UserToken.findOne({ userId });
     console.log("userToken", userToken)
 
@@ -78,7 +78,7 @@ export const getTokenUsageSummary = async (req, res) => {
   }
 };
 
-//  Get Cost Estimation
+
 export const getTokenCost = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -86,19 +86,17 @@ export const getTokenCost = async (req, res) => {
 
     if (!userToken) return res.status(404).json({ message: "Token record not found" });
 
-    // Pricing example (OpenAI-style rates)
-    const rates = { input: 0.50, output: 1 }; // $ per 1K tokens
-
-    // Assume 70% output, 30% input for rough estimate
+    
+    const rates = { input: 0.50, output: 1 }; 
     const inputTokens = userToken.tokensUsed * 0.3;
     const outputTokens = userToken.tokensUsed * 0.7;
 
     const cost =
       (inputTokens / 1000) * rates.input + (outputTokens / 1000) * rates.output;
 
-      //Cost Alert
+   
 
-    const monthlyBudget = 5; // $5 monthly budget
+    const monthlyBudget = 5; 
     const percentageUsed = (cost / monthlyBudget) * 100;
 
     let warning = null;
