@@ -124,6 +124,8 @@ export const sendGroupMessage = async (payload) => {
 export const getGroupMessages = async (groupId) => {
   return await apiRequest(`/messages/group/${groupId}`, "GET");
 };
+
+
 export const getUserGroupsWithLastMessage = async () => {
   return await apiRequest(`/messages/get-groups`, "GET");
 };
