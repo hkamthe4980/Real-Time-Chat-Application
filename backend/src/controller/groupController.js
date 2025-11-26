@@ -1,9 +1,7 @@
 import Group from "../models/groupModel.js";
 import User from "../models/userModel.js";
 
-/**
- * Create a new group
- */
+
 export const createGroup = async (req, res) => {
   try {
     const { name, description, createdBy, members } = req.body;
@@ -21,9 +19,7 @@ export const createGroup = async (req, res) => {
   }
 };
 
-/**
- * Get members of a group
- */
+
 export const getGroupMembers = async (req, res) => {
   try {
     const group = await Group.findById(req.params.id).populate(
@@ -39,9 +35,8 @@ export const getGroupMembers = async (req, res) => {
   }
 };
 
-/**
- * Search members inside a group by name (like WhatsApp @ search)
- */export const searchGroupMembers = async (req, res) => {
+
+ export const searchGroupMembers = async (req, res) => {
   try {
     let query = req.query.q || "";
     query = query.trim(); 

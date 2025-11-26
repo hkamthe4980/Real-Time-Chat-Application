@@ -1,10 +1,8 @@
-// src/utils/api.js
+
 
 const BASE_URL = "/api"; // Next.js will rewrite → backend http://localhost:5000/api
 
-/**
- * Generic API Request Handler
-*/
+
 export async function apiRequest(endpoint, method = "GET", body = null) {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -47,56 +45,39 @@ export const fetchChatHistory = async (limit = 10, includeMessages = false) => {
   );
 };
 
-/**
- * Get messages for a specific conversation
- */
 export const getConversationMessages = async (conversationId) => {
   return await apiRequest(`/chat/conversation/${conversationId}`, "GET");
 };
  
 
 
-/**
- * Start a new conversation
- */
 export const startNewConversation = async (title = "New Conversation") => {
   return await apiRequest(`/conversations/new`, "POST", { title });
 };
 
-/**
- * Delete a conversation permanently
- */
+
 export const deleteConversation = async (conversationId) => {
   return await apiRequest(`/conversations/delete/${conversationId}`, "DELETE");
 };
 
 
-/**
- * Summarize conversation (User Story 3 — Context Optimization)
- */
 export const summarizeConversation = async (conversationId) => {
   return await apiRequest(`/conversations/summarize/${conversationId}`, "POST");
 };
 
-/**
- * Get Token Usage Summary (Daily / Weekly / Monthly)
- */
+
 export const fetchTokenSummary = async () => {
   return await apiRequest(`/tokens/summary`, "GET");
 };
 
-/**
- * Get Cost Estimate for user's total usage
- */
+
 export const fetchCostEstimate = async () => {
   return await apiRequest(`/tokens/cost`, "GET");
 };
 
 
 
-/**
- * Search members inside a group (for @mention)
- */
+
 export const searchGroupMembers = async (groupId, query) => {
   return await apiRequest(
     `/groups/${groupId}/members/search?q=${encodeURIComponent(query)}`,
@@ -106,21 +87,10 @@ export const searchGroupMembers = async (groupId, query) => {
 
 
 
-/**
- * Send message with text + mentions
- */
 export const sendGroupMessage = async (payload) => {
   return await apiRequest(`/messages/send`, "POST", payload);
 };
 
-// console.log("sendGroupMessage" , sendGroupMessage)
-
-// export const getGroupMessages = async (groupId) => {
-//   return await apiRequest(`/messages/group/${groupId}`, "GET");
-// };
-/**
- * Fetch all group messages
- */
 export const getGroupMessages = async (groupId) => {
   return await apiRequest(`/messages/group/${groupId}`, "GET");
 };
