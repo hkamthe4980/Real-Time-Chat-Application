@@ -1,10 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import { useRouter } from 'next/navigation';
 import ChatNavigation from '@/components/ChatNavigation';
 import { PiChatsFill } from "react-icons/pi";
 import { IoCall } from "react-icons/io5";
 import { RxUpdate } from "react-icons/rx";
+import { getUserGroupsWithLastMessage } from '@/utils/api';
  
 
 const Conversations = ({ selectedConversation, onSelectConversation }) => {
@@ -13,56 +14,92 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
   const [activeFilter, setActiveFilter] = useState('All');
 
   const filters = ['All', 'Unread', 'Urgent', 'Groups'];
+  let groupId = null
+  // const [conversations] = useState([
+  //   {
+  //     id: 'arjun-patil',
+  //     name: 'Waybeyond Mafia',
+  //     avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop',
+  //     lastMessage: 'Coach, I need help with my shot accuracy...',
+  //     timestamp: '2m',
+  //     unreadCount: 2,
+  //     isUrgent: true,
+  //     isOnline: true,
+  //     isGroup: true,
+  //     memberCount: 21
+  //   },
+  //   {
+  //     id: 'hockey-team-a',
+  //     name: 'Hockey Team A',
+  //     avatar: 'https://ui-avatars.com/api/?name=Hockry+Team&background=6B7280&color=FFFFFF&size=32',
+  //     lastMessage: 'Sneha: Thanks for the training plan coach!',
+  //     timestamp: '1h',
+  //     unreadCount: 1,
+  //     isGroup: true,
+  //     memberCount: 12
+  //   },
+  //   {
+  //     id: 'sneha-joshi',
+  //     name: 'Pickle ball',
+  //     avatar: 'https://ui-avatars.com/api/?name=Pickle+Ball&background=6B7280&color=FFFFFF&size=32',
+  //     lastMessage: 'Voice message',
+  //     timestamp: '3h',
+  //     hasVoiceMessage: true,
+  //     voiceDuration: '0:45'
+  //   },
+  //   {
+  //     id: 'vikram-singh',
+  //     name: 'Vikram Singh',
+  //     avatar: 'https://ui-avatars.com/api/?name=Vikram+S&background=6B7280&color=FFFFFF&size=32',
+  //     lastMessage: 'Perfect! See you at practice tomorrow',
+  //     timestamp: '1d',
+  //     lastSeen: 'Last seen 8h ago'
+  //   },
+  //   {
+  //     id: 'priya-sharma',
+  //     name: 'Priya Sharma',
+  //     avatar: 'https://ui-avatars.com/api/?name=Priya+S&background=6B7280&color=FFFFFF&size=32',
+  //     lastMessage: 'Thank you for the feedback on my performance',
+  //     timestamp: '2d'
+  //   }
+  // ]);
   
-  const [conversations] = useState([
-    {
-      id: 'arjun-patil',
-      name: 'Waybeyond Mafia',
-      avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop',
-      lastMessage: 'Coach, I need help with my shot accuracy...',
-      timestamp: '2m',
-      unreadCount: 2,
-      isUrgent: true,
-      isOnline: true,
-      isGroup: true,
-      memberCount: 21
-    },
-    {
-      id: 'hockey-team-a',
-      name: 'Hockey Team A',
-      avatar: 'https://ui-avatars.com/api/?name=Hockry+Team&background=6B7280&color=FFFFFF&size=32',
-      lastMessage: 'Sneha: Thanks for the training plan coach!',
-      timestamp: '1h',
-      unreadCount: 1,
-      isGroup: true,
-      memberCount: 12
-    },
-    {
-      id: 'sneha-joshi',
-      name: 'Pickle ball',
-      avatar: 'https://ui-avatars.com/api/?name=Pickle+Ball&background=6B7280&color=FFFFFF&size=32',
-      lastMessage: 'Voice message',
-      timestamp: '3h',
-      hasVoiceMessage: true,
-      voiceDuration: '0:45'
-    },
-    {
-      id: 'vikram-singh',
-      name: 'Vikram Singh',
-      avatar: 'https://ui-avatars.com/api/?name=Vikram+S&background=6B7280&color=FFFFFF&size=32',
-      lastMessage: 'Perfect! See you at practice tomorrow',
-      timestamp: '1d',
-      lastSeen: 'Last seen 8h ago'
-    },
-    {
-      id: 'priya-sharma',
-      name: 'Priya Sharma',
-      avatar: 'https://ui-avatars.com/api/?name=Priya+S&background=6B7280&color=FFFFFF&size=32',
-      lastMessage: 'Thank you for the feedback on my performance',
-      timestamp: '2d'
-    }
-  ]);
-  
+   const [conversations, setConversations] = useState([]);
+   useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const res = await getUserGroupsWithLastMessage(); // API CALL
+        console.log("API GROUPS:", res);
+        groupId = res.groupId;
+      
+
+        // Convert backend format → your UI format
+        const formatted = res.map((g) => ({
+          id: g.groupId,
+          name: g.name,
+          avatar: "https://ui-avatars.com/api/?name=" + g.name,
+          lastMessage: g.lastMessage?.text || "No messages yet",
+          timestamp: g.lastMessage
+            ? new Date(g.lastMessage.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          unreadCount: 0,
+          isUrgent: false,
+          isOnline: false,
+          isGroup: true,
+          memberCount: g.members.length,
+        }));
+
+        setConversations(formatted);
+      } catch (err) {
+        console.error("Error fetching groups", err);
+      }
+    };
+
+    fetchGroups();
+  }, []);
     const [quickReplies] = useState([
       'Great work! 👏',
       'Keep it up!',
@@ -132,7 +169,8 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
               // onSelectConversation(conversation.id);
           
               // setShowChat(true);
-              router.push("/chatMsg")
+             router.push(`/chatMsg/${conversation.id}`);
+
             }}
             className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
               selectedConversation === conversation.id ? 'bg-gray-100 border-l-4 border-l-black' : ''

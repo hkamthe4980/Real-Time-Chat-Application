@@ -3,89 +3,90 @@
 // import MobileConversationList from '@/components/mobile/MobileConversationList';
 // import MobileChatArea from '@/components/mobile/MobileChatArea';
 // import MobileProfile from '@/components/mobile/MobileProfile';
-// import {getUserGroupsWithLastMessage} from "../../utils/api"
+// import {getUserGroupsWithLastMessage ,getGroupMessages ,sendGroupMessage} from "../../utils/api"
 // import '@/styles/mobile-chat.css';
 
 // const MobileChatPage = () => {
 //   const [view, setView] = useState('list'); // 'list', 'chat', 'profile'
 //   const [selectedConversation, setSelectedConversation] = useState(null);
-//   const [messages, setMessages] = useState([
-//     {
-//       id: 1,
-//       type: 'system',
-//       content: 'Session scheduled for today 4:00 PM - Hockey Practice',
-//       timestamp: '10:25 AM'
-//     },
-//     {
-//       id: 2,
-//       type: 'received',
-//       content: 'Coach, I\'ve been struggling with my shot accuracy during practice. Could you help me improve?',
-//       timestamp: '10:30 AM',
-//       reactions: [{ emoji: '👍', count: 1 }]
-//     },
-//     {
-//       id: 3,
-//       type: 'sent',
-//       content: 'Absolutely! I\'ve prepared a training drill video for you. Let\'s work on your stick positioning and follow-through.',
-//       timestamp: '10:32 AM',
-//       attachments: [
-//         {
-//           type: 'video',
-//           title: 'Hockey Shot Tutorial',
-//           duration: '3:24',
-//           thumbnail: '/api/placeholder/200/120'
-//         }
-//       ],
-//       description: 'Hockey Shooting Fundamentals - Focus on stick positioning and follow-through'
-//     },
-//     {
-//       id: 4,
-//       type: 'voice',
-//       content: 'Voice message',
-//       duration: '1:23',
-//       timestamp: '10:35 AM'
-//     },
-//     {
-//       id: 5,
-//       type: 'sent',
-//       content: 'Here\'s your performance analysis from yesterday\'s practice:',
-//       timestamp: '10:40 AM',
-//       attachments: [
-//         {
-//           type: 'report',
-//           title: 'Performance Report',
-//           date: 'Jan 15, 2024',
-//           metrics: [
-//             { label: 'Shot Accuracy:', value: '78%' },
-//             { label: 'Defensive Rating:', value: '92.1' },
-//             { label: 'Overall Score:', value: '8.5/10' }
-//           ]
-//         }
-//       ]
-//     },
-//     {
-//       id: 6,
-//       type: 'received',
-//       content: 'Wow! Thank you so much coach! This is exactly what I needed. I\'ll practice these drills before our next session. 🏑',
-//       timestamp: '10:42 AM',
-//       reactions: [
-//         { emoji: '❤️', count: 1 },
-//         { emoji: '🔥', count: 1 }
-//       ]
-//     },
-//     {
-//       id: 7,
-//       type: 'typing',
-//       content: 'Arjun is typing...',
-//       timestamp: 'now'
-//     }
-//   ]);
+//   // const [messages, setMessages] = useState([getGroupMessages
+//   //   {
+//   //     id: 1,
+//   //     type: 'system',
+//   //     content: 'Session scheduled for today 4:00 PM - Hockey Practice',
+//   //     timestamp: '10:25 AM'
+//   //   },
+//   //   {
+//   //     id: 2,
+//   //     type: 'received',
+//   //     content: 'Coach, I\'ve been struggling with my shot accuracy during practice. Could you help me improve?',
+//   //     timestamp: '10:30 AM',
+//   //     reactions: [{ emoji: '👍', count: 1 }]
+//   //   },
+//   //   {
+//   //     id: 3,
+//   //     type: 'sent',
+//   //     content: 'Absolutely! I\'ve prepared a training drill video for you. Let\'s work on your stick positioning and follow-through.',
+//   //     timestamp: '10:32 AM',
+//   //     attachments: [
+//   //       {
+//   //         type: 'video',
+//   //         title: 'Hockey Shot Tutorial',
+//   //         duration: '3:24',
+//   //         thumbnail: '/api/placeholder/200/120'
+//   //       }
+//   //     ],
+//   //     description: 'Hockey Shooting Fundamentals - Focus on stick positioning and follow-through'
+//   //   },
+//   //   {
+//   //     id: 4,
+//   //     type: 'voice',
+//   //     content: 'Voice message',
+//   //     duration: '1:23',
+//   //     timestamp: '10:35 AM'
+//   //   },
+//   //   {
+//   //     id: 5,
+//   //     type: 'sent',
+//   //     content: 'Here\'s your performance analysis from yesterday\'s practice:',
+//   //     timestamp: '10:40 AM',
+//   //     attachments: [
+//   //       {
+//   //         type: 'report',
+//   //         title: 'Performance Report',
+//   //         date: 'Jan 15, 2024',
+//   //         metrics: [
+//   //           { label: 'Shot Accuracy:', value: '78%' },
+//   //           { label: 'Defensive Rating:', value: '92.1' },
+//   //           { label: 'Overall Score:', value: '8.5/10' }
+//   //         ]
+//   //       }
+//   //     ]
+//   //   },
+//   //   {
+//   //     id: 6,
+//   //     type: 'received',
+//   //     content: 'Wow! Thank you so much coach! This is exactly what I needed. I\'ll practice these drills before our next session. 🏑',
+//   //     timestamp: '10:42 AM',
+//   //     reactions: [
+//   //       { emoji: '❤️', count: 1 },
+//   //       { emoji: '🔥', count: 1 }
+//   //     ]
+//   //   },
+//   //   {
+//   //     id: 7,
+//   //     type: 'typing',
+//   //     content: 'Arjun is typing...',
+//   //     timestamp: 'now'
+//   //   }
+//   // ]);
+//   const [messages, setMessages] = useState([]);
 //   const [conversations, setConversations] = useState([]);
 
 //   useEffect(() => {
 //     async function loadGroups() {
 //       try {
-//         const data = await getUserGroupsWithLastMessage();
+//         const data = await getGroupMessages("691f5eed468a7d8e3ee06a43");
 //         console.log("main data in getuserandgroup" , data)
 //         setConversations(
 //           data.map(group => ({
@@ -109,6 +110,35 @@
 //     loadGroups();
 //   }, []);
 
+//   useEffect(() => {
+//   async function loadMessages() {
+//     if (!selectedConversation) return;
+
+//     try {
+//       const data = await getGroupMessages("691f5eed468a7d8e3ee06a43");
+//       console.log("Fetched Messages: ", data);
+
+//       setMessages(
+//         data.map(msg => ({
+//           id: msg._id,
+//           type: msg.senderId === selectedConversation.currentUserId ? "sent" : "received",
+//           content: msg.text,
+//           timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
+//             hour: "2-digit",
+//             minute: "2-digit"
+//           })
+//         }))
+//       );
+//     } catch (err) {
+//       console.error("Failed to fetch messages", err);
+//     }
+//   }
+
+//   loadMessages();
+// }, [selectedConversation]);
+
+
+
 
 
 //   const handleSelectConversation = (conversationId) => {
@@ -117,15 +147,27 @@
 //     setView('chat');
 //   };
 
-//   const handleSendMessage = (message) => {
+// const handleSendMessage = async (message) => {
+//   try {
+//     const saved = await sendGroupMessage(selectedConversation.id, message);
+
 //     const newMessage = {
-//       id: messages.length + 1,
-//       type: 'sent',
-//       content: message,
-//       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+//       id: saved._id,
+//       type: "sent",
+//       content: saved.text,
+//       timestamp: new Date(saved.createdAt).toLocaleTimeString([], {
+//         hour: "2-digit",
+//         minute: "2-digit",
+//       }),
 //     };
-//     setMessages([...messages, newMessage]);
-//   };
+
+//     setMessages(prev => [...prev, newMessage]);
+
+//   } catch (err) {
+//     console.error("Failed to send message", err);
+//   }
+// };
+
 
 //   const handleBackFromChat = () => {
 //     setView('list');
@@ -434,7 +476,7 @@ import MobileConversationList from "@/components/mobile/MobileConversationList";
 import MobileChatArea from "@/components/mobile/MobileChatArea";
 import MobileProfile from "@/components/mobile/MobileProfile";
 import { getUserGroupsWithLastMessage } from "@/utils/api";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import "@/styles/mobile-chat.css";
 
 export default function MobileChatPage() {
@@ -507,16 +549,24 @@ export default function MobileChatPage() {
         />
       )}
 
-      {view === "chat" && selectedConversation && (
-        <MobileChatArea
-          conversation={selectedConversation}
-          onBack={handleBackFromChat}
-          onProfileClick={handleProfileClick}
-          senderId={senderId}
-        />
+      {view === "chat" && (
+        selectedConversation ? (
+          <MobileChatArea
+            conversation={selectedConversation}
+            onBack={handleBackFromChat}
+            onProfileClick={handleProfileClick}
+            senderId={senderId}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500 px-6">
+            <h2 className="text-lg font-medium">No Group Selected</h2>
+            <p className="text-sm mt-2 text-center">Choose a chat from the list to start messaging.</p>
+          </div>
+        )
       )}
 
-      {view === "profile" && selectedConversation && (
+
+      {view === "profile" && (
         <MobileProfile conversation={selectedConversation} onBack={handleBackFromProfile} />
       )}
     </div>

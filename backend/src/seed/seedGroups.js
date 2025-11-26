@@ -9,7 +9,7 @@ async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
 
   // get existing users (you said you have Hemant etc)
-  const users = await User.find().limit(10); // adjust as needed
+  const users = await User.find().limit(20); // adjust as needed
   if (users.length < 1) {
     console.log("No users found to seed.");
     process.exit(0);

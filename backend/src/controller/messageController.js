@@ -23,7 +23,7 @@ export const sendMessage = async (req, res) => {
       mentions,
     });
 
-    // 🔥 Send SSE event to all connected clients
+    
     sendEventToGroup(groupId, {
       _id: message._id,
       groupId,

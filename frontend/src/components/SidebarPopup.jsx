@@ -52,7 +52,7 @@ export default function SidebarPopup({ open, onClose, onSelectConversation }) {
             <p className="text-red-500 text-center">{error}</p>
           )}
 
-          {/* No conversations */}
+          No conversations
           {!loading && conversations.length === 0 && (
             <p className="text-gray-400 text-center">No conversations found</p>
           )}

@@ -21,7 +21,7 @@ export default function ChatPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <ChatInput
-        groupId="691f5eed468a7d8e3ee06a43"
+        groupId="692702e03bac5eec96570535"
         senderId={senderId}
         onMessageSent={() => console.log("Message saved")}
       />

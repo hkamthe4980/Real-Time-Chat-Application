@@ -1,12 +1,10 @@
 
 
-
-
-
 "use client";
 import React, { useState } from "react";
 
 const MobileConversationList = ({ conversations = [], onSelectConversation }) => {
+  console.log("mobileconversationList load")
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter to show only group conversations
@@ -103,9 +101,9 @@ const MobileConversationList = ({ conversations = [], onSelectConversation }) =>
             </div>
           </div>
         ))}
-        {filteredConversations.length === 0 && (
+        {/* {filteredConversations.length === 0 && (
           <div className="p-4 text-center text-gray-500">No conversations</div>
-        )}
+        )} */}
       </div>
     </div>
   );

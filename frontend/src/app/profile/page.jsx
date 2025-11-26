@@ -2,8 +2,8 @@
 import React from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ChatProfile from '@/components/chat/ChatProfile';
-import '@/styles/chat.css';
+import ChatProfile from '@/components/ChatProfile';
+import '@/styles/mobile-chat.css';
 import { HiUserGroup } from "react-icons/hi2";
 
 const Profile = ({conversation}) => {

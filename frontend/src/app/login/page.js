@@ -22,7 +22,7 @@ export default function LoginPage() {
     try {
       const res = await apiRequest("/auth/login", "POST", { email, password });
       localStorage.setItem("token", res.token);
-      router.push("/mobile");
+      router.push("/conversations");
     } catch (err) {
       setError("Invalid credentials, please try again.");
     }

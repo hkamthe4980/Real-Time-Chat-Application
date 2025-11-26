@@ -5,12 +5,13 @@ import {
   getUserGroupsWithLastMessage
 } from "../controller/messageController.js";
 
+
 import { verifyToken } from "../middleware/authMiddleware.js";
  
 const router = express.Router();
 
 // Send message
-router.post("/send", sendMessage);
+router.post("/send", verifyToken, sendMessage);
 
 // Get all messages of group
 router.get("/group/:groupId", getGroupMessages);
