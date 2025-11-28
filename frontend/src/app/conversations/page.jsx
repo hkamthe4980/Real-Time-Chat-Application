@@ -77,7 +77,8 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
         const formatted = res.map((g) => ({
           id: g.groupId,
           name: g.name,
-          avatar: "https://ui-avatars.com/api/?name=" + g.name,
+          // avatar: "https://ui-avatars.com/api/?name=" + g.name,
+          avatar:g.avatar,
           lastMessage: g.lastMessage?.text || "No messages yet",
           timestamp: g.lastMessage
             ? new Date(g.lastMessage.createdAt).toLocaleTimeString([], {

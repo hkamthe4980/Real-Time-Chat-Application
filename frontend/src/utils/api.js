@@ -1,6 +1,6 @@
 
 
-const BASE_URL = "/api"; // Next.js will rewrite → backend http://localhost:5000/api
+// const BASE_URL = "/api"; // Next.js will rewrite → backend http://localhost:5000/api
 
 
 export async function apiRequest(endpoint, method = "GET", body = null) {
@@ -20,10 +20,11 @@ export async function apiRequest(endpoint, method = "GET", body = null) {
   }
                                          
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, options);
+    const response = await fetch(`http://localhost:5001/api${endpoint}`, options);
 
     // Parse JSON safely
     const data = await response.json().catch(() => null);
+    // console.log("data from api.js: ", data);
 
     if (!response.ok) {
       throw new Error(data?.message || `Request failed (${response.status})`);
@@ -95,6 +96,10 @@ export const getGroupMessages = async (groupId) => {
   return await apiRequest(`/messages/group/${groupId}`, "GET");
 };
 
+//? fetch grp details for `chatMsg/:id` page
+export const getGroupDetails = async (groupId) => {
+  return await apiRequest(`/groups/${groupId}/profile`, "GET");
+};
 
 export const getUserGroupsWithLastMessage = async () => {
   return await apiRequest(`/messages/get-groups`, "GET");

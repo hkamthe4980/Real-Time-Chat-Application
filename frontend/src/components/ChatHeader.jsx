@@ -3,7 +3,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 // import '@/styles/chat.css';
 
-const ChatHeader = ({ conversation}) => {
+const ChatHeader = ({ conversation }) => {
   const router = useRouter();
   if (!conversation) return null;
 
@@ -23,12 +23,16 @@ const ChatHeader = ({ conversation}) => {
 
         {/* //? Avatar */}
         <img 
-          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&h=200&fit=crop"
+          src={
+            conversation.avatar
+              // ? `${conversation.avatar}=${encodeURIComponent(conversation.name)}`
+              // : "https://ui-avatars.com/api/?name=" + conversation.name
+          }
           alt={conversation.name}
           className="w-10 h-10 rounded-full object-cover border"
         />
 
-        <button onClick={() => router.push("/profile")} className="text-left min-w-0 flex-1">
+        <button onClick={() => router.push(`/profile?groupId=${conversation.id}`)} className="text-left min-w-0 flex-1">
           <h2 className="text-lg sm:text-xl font-semibold text-black truncate hover:text-gray-700 transition-colors">{conversation.name}</h2>
           <div className="flex items-center space-x-2 text-sm sm:text-base text-gray-600">
             {conversation.isOnline ? (
