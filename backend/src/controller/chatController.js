@@ -1,12 +1,10 @@
 
-
 import { getLLMStream } from "../services/llmService.js";
 import { sendStreamChunk } from "../utils/streamHandler.js";
 import { countMessageTokens } from "../services/tokenService.js";
 import Conversation from "../models/conversationModel.js";
 import Message from "../models/messageModel.js";
 import UserToken from "../models/userTokenModel.js";
-import { validatePrompt } from "../middleware/promptValidator.js";
 
 
 const sendBudgetEvent = (res, payload) => {
@@ -31,13 +29,6 @@ export const streamChatResponse = async (req, res) => {
       if (conversationId === "undefined" || conversationId === "") {
         conversationId = null;
       }
-    }
-
-    // 🛡 Prompt validation
-    const validation = validatePrompt(prompt);
-    if (validation) {
-      sendStreamChunk(res, { error: validation.reason });
-      return res.end();
     }
 
     // 🔍 Get user token model

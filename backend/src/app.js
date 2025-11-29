@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import chatRoutes from '../src/routes/chatRoutes.js';
 import authRoutes from '../src/routes/authRoutes.js';
-import analyticsRoutes from '../src/routes/analyticsRoutes.js';
+// import analyticsRoutes from '../src/routes/analyticsRoutes.js';
 import tokenRoutes from "../src/routes/tokenRoutes.js"
 import groupRoutes from "../src/routes/groupRoutes.js";
 import messageRoutes from "../src/routes/messageRoutes.js";
@@ -26,7 +26,7 @@ app.use(express.json());
 // Routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/analytics', analyticsRoutes);
+// app.use('/api/analytics', analyticsRoutes);
 app.use('/api', tokenRoutes);
 // app.use('/api/group-chat', groupChatRoutes);
 
