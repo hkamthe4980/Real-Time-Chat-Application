@@ -85,6 +85,7 @@ export const getUserGroupsWithLastMessage = async (req, res) => {
         return {
           groupId: group._id,
           name: group.name,
+          avatar: group.avatar,
           members: group.members,
           lastMessage: lastMessage
             ? {
