@@ -219,7 +219,7 @@ const ChatMsg = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const [username, setUsername] = useState("");
   //? store grp details - push
-  const [groupData, setGroupData] = useState(null); 
+  const [groupData, setGroupData] = useState(null);
   console.log("UserName from decode token", username)
 
 
@@ -252,7 +252,7 @@ const ChatMsg = () => {
   }, [groupId]);
   console.log("groupData", groupData);
 
-  
+
   const [messages, setMessages] = useState([]);
   // console.log("messages", messages)
   //? vaish
@@ -261,15 +261,17 @@ const ChatMsg = () => {
 
   //? ⭐ Convert backend → UI format - Vaish
   const mapMessage = (msg) => {
-    const senderId =
-      typeof msg.sender === "object" ? msg.sender._id : msg.sender;
-
-    const senderName =
-      typeof msg.sender === "object" ? msg.sender.name : msg.name;
+    //? grab sender details:
+    // ID
+    const senderId = typeof (msg.sender) === "object" ? msg.sender._id : msg.sender;
+    // name
+    const senderName = typeof (msg.sender) === "object" ? msg.sender.name : msg.name;
+    // avatar
+    const senderAvatar = typeof (msg.sender) === "object" ? msg.sender.avatar : null;
 
     return {
       id: msg._id,
-      sender: { _id: senderId, name: senderName },
+      sender: { _id: senderId, name: senderName, avatar: senderAvatar },
       content: msg.text,
       name: senderName,
       timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
@@ -306,7 +308,7 @@ const ChatMsg = () => {
   // -------------------------------------------------------
   //? ⭐ SSE Listener: messages + typing - Vaish
   // -------------------------------------------------------
-useEffect(() => {
+  useEffect(() => {
     if (!groupId || !loggedInUserId) return;
 
     const es = new EventSource(
@@ -345,7 +347,7 @@ useEffect(() => {
 
       setMessages((prev) => [...prev, mapMessage(data)]);
     };
-    
+
 
     es.onerror = () => {
       console.log("❌ SSE Disconnected");
@@ -391,9 +393,9 @@ useEffect(() => {
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-gray-50">
-      <ChatHeader 
-        conversation={{ name: groupData?.name, id: groupId, avatar: groupData?.avatar }} 
-        // onClick={() => router.push(`/profile?groupId=${groupId}`)}
+      <ChatHeader
+        conversation={{ name: groupData?.name, id: groupId, avatar: groupData?.avatar }}
+      // onClick={() => router.push(`/profile?groupId=${groupId}`)}
       />
 
       {/* Messages + Typing - ChatMain */}

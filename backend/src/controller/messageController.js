@@ -8,10 +8,10 @@ import { sendEventToGroup } from "../routes/sseRoutes.js";
 export const sendMessage = async (req, res) => {
   try {
     console.log(
-      "req body" , req.body
+      "req body", req.body
     )
-    const { groupId, sender, text, mentions ,name } = req.body;
-    console.log("name comes from frontend side" , name)
+    const { groupId, sender, text, mentions, name } = req.body;
+    console.log("name comes from frontend side", name)
 
     const group = await Group.findById(groupId);
     if (!group) return res.status(404).json({ error: "Group not found" });
@@ -23,7 +23,7 @@ export const sendMessage = async (req, res) => {
       mentions,
     });
 
-    
+
     sendEventToGroup(groupId, {
       _id: message._id,
       groupId,
@@ -48,8 +48,7 @@ export const getGroupMessages = async (req, res) => {
   try {
     const groupId = req.params.groupId.trim();
     const msgs = await Message.find({ groupId })
-      .sort({ createdAt: 1 })
-      .populate("sender", "name email")
+      .populate("sender", "name email avatar")
       .populate("mentions", "name email");
     //  console.log("messages" , msgs)
     res.json(msgs);

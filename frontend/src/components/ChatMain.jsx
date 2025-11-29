@@ -132,35 +132,41 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
   // ⭐ Normalize sender ID & name (backend sometimes sends object/string)
   const getSenderId = (sender) => {
     if (!sender) return null;
-    if (typeof sender === "string") return sender;
-    if (typeof sender === "object") return sender._id;
+    if (typeof (sender) === "string") return sender;
+    if (typeof (sender) === "object") return sender._id;
     return null;
   };
 
   const getSenderName = (sender) => {
     if (!sender) return "User";
-    if (typeof sender === "object") return sender.name || "User";
+    if (typeof (sender) === "object") return sender.name || "User";
     return "User";
+  };
+
+  const getSenderAvatar = (sender) => {
+    if (!sender || typeof (sender) !== "object") return null;
+    return sender.avatar;
   };
 
   const renderMessage = (message) => {
     // console.log("mesage" , message)
     const senderId = getSenderId(message.sender);
     const senderName = getSenderName(message.sender);
+    const senderAvatar = getSenderAvatar(message.sender);
 
     // ⭐ Determine sent/received
     const type = senderId === userId ? "sent" : "received";
 
     // ⭐ Create dynamic avatar
-    // const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    //   senderName
-    // )}&background=52D137&color=FFFFFF`;
-    const avatarUrl = message.sender.avatar;
+    const avatarUrl = senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      senderName
+    )}&background=52D137&color=FFFFFF`;
+
 
     switch (type) {
       case "received":
         return (
-          <div key={message.id} className="flex items-end space-x-2 mb-3">
+          <div key={message.id} className="flex items-center space-x-2 mb-3">
             {/* Avatar */}
             <img
               src={avatarUrl}
@@ -182,7 +188,7 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
 
       case "sent":
         return (
-          <div key={message.id} className="flex justify-end mb-3">
+          <div key={message.id} className="flex items-end justify-end space-x-2 mb-3">
             <div className="flex flex-col items-end max-w-[75%]">
               <div className="bg-black text-white rounded-2xl rounded-br-sm px-3 py-2 shadow-sm">
                 <p className="text-[15px] leading-snug">{message.content}</p>
@@ -203,13 +209,13 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
   return (
     <div
       ref={scrollContainerRef}
-      className="h-full overflow-y-auto px-4 sm:px-6 pt-0 pb-4 bg-gray-50 scrollbar-hide"
+      className="h-full overflow-y-auto px-4 sm:px-6 pt-0 pb-4 bg-gray-50 scrollbar-hide pt-3"
     >
       <div className="max-w-4xl mx-auto">
         {messages.map(renderMessage)}
 
         {/* Typing indicator  */}
-         {/* {typingUsers.length > 0 && (
+        {/* {typingUsers.length > 0 && (
           <div className="px-2 py-2 text-sm text-black italic animate-pulse">
             {typingUsers.length === 1
               ? `${typingUsers[0].name} is typing...`
