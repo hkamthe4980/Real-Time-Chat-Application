@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
-import UserToken from "../models/userTokenModel.js";
+// import UserToken from "../models/userTokenModel.js";
 // import { verifyToken } from "../middleware/authMiddleware.js";
 
 export const registerUser = async (req, res) => {
@@ -16,7 +16,7 @@ export const registerUser = async (req, res) => {
 
 
 
-        await UserToken.create({ userId: newUser._id,username:name, planType: "free", tokenBudget: 4000 });
+        // await UserToken.create({ userId: newUser._id,username:name, planType: "free", tokenBudget: 4000 });
 
 
         return res.status(201).json({ message: "User registered", userId: newUser._id });
@@ -35,7 +35,7 @@ export const loginUser = async (req, res) => {
         if (!isValid) return res.status(401).json({ message: "Invalid credentials" });
 
         const token = jwt.sign(
-            { id: user._id,name:user.name, planType: user.planType },
+            { id: user._id, name: user.name, planType: user.planType },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );

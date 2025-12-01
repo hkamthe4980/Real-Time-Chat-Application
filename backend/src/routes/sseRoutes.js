@@ -37,12 +37,11 @@
 
 
 import express from "express";
-import Message from "../models/messageModel.js";
 
 const router = express.Router();
 
 // ⭐ Store all clients by group
-let clients = []; 
+let clients = [];
 // each entry = { id, groupId, res }
 
 // -------------------------------------------------------

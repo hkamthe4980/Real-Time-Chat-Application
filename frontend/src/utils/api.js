@@ -18,7 +18,7 @@ export async function apiRequest(endpoint, method = "GET", body = null) {
   if (body) {
     options.body = JSON.stringify(body);
   }
-                                         
+
   try {
     const response = await fetch(`http://localhost:5001/api${endpoint}`, options);
 
@@ -38,43 +38,42 @@ export async function apiRequest(endpoint, method = "GET", body = null) {
 }
 
 
- 
-export const fetchChatHistory = async (limit = 10, includeMessages = false) => {
-  return await apiRequest(
-    `/chat/history?limit=${limit}&includeMessages=${includeMessages}`,
-    "GET"
-  );
-};
 
-export const getConversationMessages = async (conversationId) => {
-  return await apiRequest(`/chat/conversation/${conversationId}`, "GET");
-};
- 
+// export const fetchChatHistory = async (limit = 10, includeMessages = false) => {
+//   return await apiRequest(
+//     `/chat/history?limit=${limit}&includeMessages=${includeMessages}`,
+//     "GET"
+//   );
+// };
+
+// export const getConversationMessages = async (conversationId) => {
+//   return await apiRequest(`/chat/conversation/${conversationId}`, "GET");
+// };
+
+// export const startNewConversation = async (title = "New Conversation") => {
+//   return await apiRequest(`/conversations/new`, "POST", { title });
+// };
+
+// export const deleteConversation = async (conversationId) => {
+//   return await apiRequest(`/conversations/delete/${conversationId}`, "DELETE");
+// };
+
+// export const summarizeConversation = async (conversationId) => {
+//   return await apiRequest(`/conversations/summarize/${conversationId}`, "POST");
+// };
+
+// export const fetchTokenSummary = async () => {
+//   return await apiRequest(`/tokens/summary`, "GET");
+// };
+
+// export const fetchCostEstimate = async () => {
+//   return await apiRequest(`/tokens/cost`, "GET");
+// };
 
 
-export const startNewConversation = async (title = "New Conversation") => {
-  return await apiRequest(`/conversations/new`, "POST", { title });
-};
 
 
-export const deleteConversation = async (conversationId) => {
-  return await apiRequest(`/conversations/delete/${conversationId}`, "DELETE");
-};
 
-
-export const summarizeConversation = async (conversationId) => {
-  return await apiRequest(`/conversations/summarize/${conversationId}`, "POST");
-};
-
-
-export const fetchTokenSummary = async () => {
-  return await apiRequest(`/tokens/summary`, "GET");
-};
-
-
-export const fetchCostEstimate = async () => {
-  return await apiRequest(`/tokens/cost`, "GET");
-};
 
 
 
@@ -85,8 +84,6 @@ export const searchGroupMembers = async (groupId, query) => {
     "GET"
   );
 };
-
-
 
 export const sendGroupMessage = async (payload) => {
   return await apiRequest(`/messages/send`, "POST", payload);
