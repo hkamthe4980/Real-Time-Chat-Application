@@ -1,6 +1,6 @@
 import Message from "../models/groupMessageModel.js";
 import Group from "../models/groupModel.js";
-import { sendEventToGroup } from "../routes/sseRoutes.js";
+import { sendEventToGroup, sendNotificationToUser } from "../routes/sseRoutes.js";
 
 /**
  * Send a message in a group
@@ -23,7 +23,7 @@ export const sendMessage = async (req, res) => {
       mentions,
     });
 
-
+    // The message is broadcast to the Group Chat. (Only people currently inside that group see this).
     sendEventToGroup(groupId, {
       _id: message._id,
       groupId,
@@ -33,6 +33,30 @@ export const sendMessage = async (req, res) => {
       mentions,
       createdAt: message.createdAt
     });
+    //- Lines 1-36: The message is saved to MongoDB.
+
+    // 2. Send global notifications to mentioned users
+    //? check if mentions array is not empty
+    if (mentions && mentions.length > 0) {
+      //? loop through each mentioned user
+      mentions.forEach((userId) => {
+        //? trigger notification - pass userId & notification object/data
+        sendNotificationToUser(userId, {
+          //? type of notification to tell frontend that this is not a chat msg but a notification 
+          //? ans payload contains actual notification data
+          type: "TAG_NOTIFICATION",
+          payload: {
+            messageId: message._id,
+            groupId,
+            groupName: group.name,
+            senderName: name,
+            text,
+            createdAt: message.createdAt,
+          },
+        });
+        console.log(`notification sent to user ${userId} form ${name}`);
+      });
+    }
 
     res.status(201).json(message);
 

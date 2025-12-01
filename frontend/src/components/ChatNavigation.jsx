@@ -3,10 +3,23 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-const ChatNavigation = ({ showProfile, setShowProfile, showChat, setShowChat}) => {
+import { useNotifications } from '../context/NotificationContext';
+import { useState } from 'react';
+
+const ChatNavigation = ({ showProfile, setShowProfile, showChat, setShowChat }) => {
   const router = useRouter();
+  const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    setShowNotifications(false);
+    // Navigate to the group chat
+    // router.push(`/chatMsg/${notification.groupId}`);
+  };
+
   return (
-    <header className="bg-black text-white shadow-lg h-20">
+    <header className="bg-black text-white shadow-lg h-20 relative z-50">
       <div className="flex items-center justify-between h-full px-6">
         {/* Logo and Title */}
         <div className="flex items-center gap-4">
@@ -49,12 +62,73 @@ const ChatNavigation = ({ showProfile, setShowProfile, showChat, setShowChat}) =
           </button>
 
           {/* Notification Bell */}
-          <button className="relative p-2 hover:opacity-80 rounded-lg transition">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold border-2 border-black">3</span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 hover:opacity-80 rounded-lg transition"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold border-2 border-black">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notification Dropdown */}
+            {showNotifications && (
+              <div className="fixed left-4 right-4 top-20 md:absolute md:right-0 md:left-auto md:top-full md:mt-2 md:w-80 bg-white rounded-lg shadow-xl overflow-hidden z-50 border border-gray-200">
+                <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                  <h3 className="font-semibold text-gray-700">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs text-slate-600 hover:text-slate-800 font-medium border-2 border-slate-200 rounded-lg px-2 py-1"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500 text-sm">
+                      No notifications yet
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition ${!notification.read ? 'bg-slate-100' : ''}`}
+                      >
+                        <p className="text-sm text-gray-800">
+                          <div className="flex justify-between">
+                            {/* grp name: */}
+                            <span className="font-bold">{notification.groupName}</span>
+                            {/* time */}
+                            <span className="text-xs text-gray-400 mt-1">
+                              {new Date(notification.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          {/* mentioned you */}
+                          <span className="font-bold ml-1">Mentoined you</span>
+                          <br />
+                          {/* sender name */}
+                          <span className="font-medium ml-1">{notification.senderName}: </span>
+                          {/* message */}
+                          <span className="text-xs text-gray-500 mt-1 truncate">"{notification.text}"</span>
+                        </p>
+
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Settings */}
           <button className="p-2 hover:opacity-80 rounded-lg transition">
@@ -65,7 +139,7 @@ const ChatNavigation = ({ showProfile, setShowProfile, showChat, setShowChat}) =
           </button>
 
           {/* User Profile */}
-          <button 
+          <button
             className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 transition"
           >
             <img

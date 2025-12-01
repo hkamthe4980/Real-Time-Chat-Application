@@ -14,7 +14,8 @@
 
 
 import "./globals.css";
-// import Navbar from "../components/Navbar";
+import { NotificationProvider } from "../context/NotificationContext";
+// import { SnackbarProvider } from "notistack";
 
 export const metadata = {
   title: "Collaborator",
@@ -25,9 +26,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-gradient-to-r from-indigo-50 via-white to-indigo-100 font-sans">
-        {/* <Navbar /> */}
-        {/* <main className="px-4 sm:px-6 lg:px-8">{children}</main> */}
-        <main>{children}</main>
+        {/* <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}> */}
+
+        {/* context provider */}
+        <NotificationProvider>
+
+          <main>{children}</main>
+
+        </NotificationProvider>
+
+        {/* </SnackbarProvider> */}
       </body>
     </html>
   );
