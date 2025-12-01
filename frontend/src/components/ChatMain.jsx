@@ -166,7 +166,7 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
     switch (type) {
       case "received":
         return (
-          <div key={message.id} className="flex items-center space-x-2 mb-3">
+          <div key={message.id} className="flex items-end space-x-2 mb-3">
             {/* Avatar */}
             <img
               src={avatarUrl}
@@ -175,7 +175,7 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
             />
 
             {/* Message Bubble + Time */}
-            <div className="flex flex-col max-w-[75%]">
+            <div className="flex flex-col max-w-[75%] ">
               <div className="bg-white text-black rounded-2xl rounded-bl-sm px-3 py-2 shadow-sm">
                 <p className="text-[15px] leading-snug">{message.content}</p>
               </div>
