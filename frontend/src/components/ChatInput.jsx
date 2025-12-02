@@ -599,7 +599,7 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
             <button
               type="button"
               onClick={() => setShowAttachMenu((prev) => !prev)}
-              className="min-w-11 min-h-11 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition active:scale-95 shadow-md mb-7"
+              className="min-w-11 min-h-11 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition active:scale-95 shadow-md"
             >
               <AiOutlinePaperClip className="text-white text-xl" />
             </button>
@@ -650,7 +650,7 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
               onFocus={handleFocus}
               onBlur={handleBlur}
               placeholder="Type a message..."
-              className="w-full bg-gray-100 border border-gray-300 rounded-2xl px-4 py-3 text-[15px] leading-snug resize-none focus:outline-none focus:ring-2 focus:ring-black min-h-[33px] max-h-[120px]"
+              className="w-full bg-gray-100 border border-gray-300 rounded-2xl px-4 py-3 text-[15px] leading-snug resize-none focus:outline-none focus:ring-2 focus:ring-black max-h-[120px]"
               rows="1"
             />
 
@@ -674,7 +674,7 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
           <button
             type="button"
             onClick={toggleRecording}
-            className={`min-w-11 min-h-11 rounded-full flex items-center justify-center shadow-md mb-7 transition active:scale-95 ${isRecording ? "bg-red-500" : "bg-black"
+            className={`min-w-11 min-h-11 rounded-full flex items-center justify-center shadow-md transition active:scale-95 ${isRecording ? "bg-red-500" : "bg-black"
               } text-white`}
           >
             <FaMicrophone className="text-xl" />
@@ -683,7 +683,7 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
           {/* Send Button (same line) */}
           <button
             type="submit"
-            className="min-w-11 min-h-11 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition active:scale-95 shadow-md mb-2"
+            className="min-w-11 min-h-11 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition active:scale-95 shadow-md"
           >
             <IoMdSend className="text-white text-xl ml-1" />
           </button>
