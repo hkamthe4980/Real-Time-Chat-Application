@@ -47,7 +47,7 @@ export const broadcastToGroup = (groupId, data) => {
     (c) => c.groupId.toString() === groupId.toString()
   );
 
-  //? send data to each client
+  //? send data to each client/user
   groupClients.forEach((client) => {
     //? returns RAW SSE in frontend
     client.res.write(`data: ${JSON.stringify(data)}\n\n`);

@@ -17,7 +17,7 @@ export const NotificationProvider = ({ children }) => {
     //? pop notification
     const { enqueueSnackbar } = useSnackbar();
 
-    //? when app loads check the localStorage for notifications & restore em'
+    //* when app loads check the localStorage for notifications & restore em'
     useEffect(() => {
         //? saved JSON string cos localStorage only stores strings
         const saved = localStorage.getItem("notifications");
@@ -81,13 +81,15 @@ export const NotificationProvider = ({ children }) => {
                     setUnreadCount((prev) => prev + 1);
                     setLatestNotification(newNotif);
 
-                    //? Show pop-up notification
-                    let msg = `${newNotif.groupName} \n Mentioned you \n ${newNotif.senderName}: "${newNotif.text}"`;
-                    enqueueSnackbar(msg, {
+                    //? notificatiion store msg
+                    // let msg = `${newNotif.groupName} \n Mentioned you \n ${newNotif.senderName}: "${newNotif.text}"`;
+                    // ? pop-up notification msg
+                    let popUpMsg = `${newNotif.senderName} Mentioned you \n : "${newNotif.text}"`;
+                    enqueueSnackbar(popUpMsg, {
                         variant: 'default',
-                        autoHideDuration: 5000,
-                        style: { borderRadius: '30px' },
-                        // anchorOrigin: { vertical: 'top', horizontal: 'right' }
+                        autoHideDuration: 3000,
+                        style: { borderRadius: '26px' },
+                        anchorOrigin: { vertical: 'top', horizontal: 'right' }
                     });
                 }
             } catch (err) {
@@ -104,7 +106,7 @@ export const NotificationProvider = ({ children }) => {
         return () => {
             eventSource.close();
         };
-    }, []);
+    }, [enqueueSnackbar]);
 
 
     //* Utility Functions

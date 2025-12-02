@@ -7,10 +7,10 @@ import { sendEventToGroup, sendNotificationToUser } from "../routes/sseRoutes.js
  */
 export const sendMessage = async (req, res) => {
   try {
-    console.log(
-      "req body", req.body
-    )
-    const { groupId, sender, text, mentions, name } = req.body;
+    console.log("req body", req.body)
+    console.log("req body", req.body)
+    const { groupId, sender, text, mentions, name, avatar } = req.body;
+    console.log("name comes from frontend side", name)
     console.log("name comes from frontend side", name)
 
     const group = await Group.findById(groupId);
@@ -29,6 +29,7 @@ export const sendMessage = async (req, res) => {
       groupId,
       name,
       sender,
+      avatar, // ⭐ Include avatar in broadcast
       text,
       mentions,
       createdAt: message.createdAt

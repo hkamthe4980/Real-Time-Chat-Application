@@ -14,8 +14,9 @@
 
 
 import "./globals.css";
-import { NotificationProvider } from "../context/NotificationContext";
+// import { NotificationProvider } from "../context/NotificationContext";
 // import { SnackbarProvider } from "notistack";
+import { Providers } from "./provider";
 
 export const metadata = {
   title: "Collaborator",
@@ -27,15 +28,14 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-gradient-to-r from-indigo-50 via-white to-indigo-100 font-sans">
         {/* <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}> */}
-
-        {/* context provider */}
-        <NotificationProvider>
-
-          <main>{children}</main>
-
-        </NotificationProvider>
-
+        {/*? context provider */}
+        {/* <NotificationProvider> */}
+        {/* <main>{children}</main> */}
+        {/* </NotificationProvider> */}
         {/* </SnackbarProvider> */}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

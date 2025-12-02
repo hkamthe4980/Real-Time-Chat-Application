@@ -103,7 +103,7 @@ const ChatNavigation = ({ showProfile, setShowProfile, showChat, setShowChat }) 
                         onClick={() => handleNotificationClick(notification)}
                         className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition ${!notification.read ? 'bg-slate-100' : ''}`}
                       >
-                        <p className="text-sm text-gray-800">
+                        <div className="text-sm text-gray-800">
                           <div className="flex justify-between">
                             {/* grp name: */}
                             <span className="font-bold">{notification.groupName}</span>
@@ -119,8 +119,8 @@ const ChatNavigation = ({ showProfile, setShowProfile, showChat, setShowChat }) 
                           {/* sender name */}
                           <span className="font-medium ml-1">{notification.senderName}: </span>
                           {/* message */}
-                          <span className="text-xs text-gray-500 mt-1 truncate">"{notification.text}"</span>
-                        </p>
+                          <span className="text-xs text-gray-500 mt-1 truncate">&quot;{notification.text}&quot;</span>
+                        </div>
 
                       </div>
                     ))

@@ -35,7 +35,8 @@ app.use('/api/auth', authRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/sse", sseRotes);
-
+//? media uplaod route
+app.use("/uploads", express.static("uploads")); // ⭐ REQUIRED FOR FILE VIEW
 
 
 

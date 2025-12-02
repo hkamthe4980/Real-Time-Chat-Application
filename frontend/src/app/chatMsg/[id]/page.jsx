@@ -218,6 +218,7 @@ const ChatMsg = () => {
   // Get logged-in UserId from token stored in localStorage
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const [username, setUsername] = useState("");
+  const [userAvatar, setUserAvatar] = useState(null);
   //? store grp details - push
   const [groupData, setGroupData] = useState(null);
   console.log("UserName from decode token", username)
@@ -231,7 +232,10 @@ const ChatMsg = () => {
         const decoded = jwtDecode(token);
         console.log("decoded data", decoded);
         setLoggedInUserId(decoded.id);
-        setUsername(decoded.name)
+        setUsername(decoded.name);
+        // Use avatar from token or generate fallback
+        // Populated it from the JWT Token or give a fallback UI Avatar if the token doesn't have one
+        setUserAvatar(decoded.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(decoded.name)}&background=random`);
       }
     }
   }, []);
@@ -267,12 +271,19 @@ const ChatMsg = () => {
     // name
     const senderName = typeof (msg.sender) === "object" ? msg.sender.name : msg.name;
     // avatar
-    const senderAvatar = typeof (msg.sender) === "object" ? msg.sender.avatar : null;
+    const senderAvatar = typeof (msg.sender) === "object" ? msg.sender.avatar : msg.avatar;
 
     return {
       id: msg._id,
       sender: { _id: senderId, name: senderName, avatar: senderAvatar },
-      content: msg.text,
+      // text content (may be empty for file/audio)
+      content: msg.text || "",
+      // ⭐ VERY IMPORTANT: keep original type (= 'audio' from SSE / DB)
+      type: msg.type || (msg.fileUrl ? "file" : "text"),
+      fileUrl: msg.fileUrl || null,
+      fileName: msg.fileName || null,
+      fileSize: msg.fileSize || null,
+
       name: senderName,
       timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
         hour: "2-digit",
@@ -292,7 +303,7 @@ const ChatMsg = () => {
     const loadMessages = async () => {
       try {
         const data = await getGroupMessages(groupId);
-        // console.log("normal messages", data);
+        // console.log("normal messages------", data);
         setMessages(data.map(mapMessage));
 
       } catch (err) {
@@ -316,8 +327,9 @@ const ChatMsg = () => {
     );
 
     es.onmessage = (event) => {
-      console.log("🔥 RAW SSE:", event.data);
+      // console.log("🔥 RAW SSE:", event.data);
       const data = JSON.parse(event.data);
+      console.log("🔥 RAW SSE --------:", data);
 
       // ----------------------------------------------------
       // ⭐ TYPING EVENT
@@ -327,7 +339,7 @@ const ChatMsg = () => {
           if (data.typing) {
             // show typing
             setTypingUsers([
-              { senderId: data.senderId, name: data.userName },
+              { senderId: data.senderId, name: data.userName, avatar: data.userAvatar },
             ]);
           } else {
             // hide typing
@@ -337,11 +349,31 @@ const ChatMsg = () => {
         return; // do NOT treat as message
       }
 
+      // BEFORE normal message section
+      if (data.type === "file" || data.type === "audio") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: data._id,
+            sender: { _id: data.sender, name: data.name, avatar: data.userAvatar },
+            type: data.type,
+            fileUrl: data.fileUrl,
+            fileName: data.fileName,
+            fileSize: data.fileSize,
+            timestamp: new Date(data.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          },
+        ]);
+        return;
+      }
+
+
       // ----------------------------------------------------
       //? ⭐ NORMAL MESSAGE
       // ----------------------------------------------------
-      const incomingSender =
-        data.sender || data.senderId;
+      const incomingSender = data.sender || data.senderId;
 
       if (incomingSender === loggedInUserId) return;
 
@@ -367,7 +399,7 @@ const ChatMsg = () => {
     // Optimistic UI update
     const optimisticMsg = {
       id: "local-" + Date.now(),
-      sender: { _id: loggedInUserId, name: username },
+      sender: { _id: loggedInUserId, name: username, avatar: userAvatar },
       content: text,
       timestamp: new Date().toLocaleTimeString([], {
         hour: "2-digit",
@@ -383,6 +415,7 @@ const ChatMsg = () => {
     await sendGroupMessage({
       groupId,
       sender: loggedInUserId,
+      avatar: userAvatar,
       text,
       mentions,
       isUrgent,
@@ -409,9 +442,7 @@ const ChatMsg = () => {
 
             {/* Avatar */}
             <img
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                typingUsers[0].name
-              )}&background=52D137&color=FFFFFF`}
+              src={typingUsers[0].avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(typingUsers[0].name)}&background=52D137&color=FFFFFF`}
               alt="avatar"
               className="w-8 h-8 rounded-full object-cover ml-2"
             />
@@ -434,6 +465,7 @@ const ChatMsg = () => {
         groupId={groupId}
         senderId={loggedInUserId}
         userName={username}
+        userAvatar={userAvatar}
       />
     </div>
   );
