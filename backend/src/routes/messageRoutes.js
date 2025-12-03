@@ -53,6 +53,9 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     // ⭐ type can be: "file" (image/doc) or "audio" (voice note)
     const { groupId, senderId, name, type, avatar } = req.body;
 
+    // ⭐ ADD THIS 
+      const transcription = req.body.transcription || null;
+
     console.log("📂 FILE RECEIVED:", file);
     console.log("📥 BODY:", req.body);
 
@@ -74,7 +77,7 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
       createdAt: new Date(),
 
       // ⭐ you can later fill this with real transcription (OpenAI, etc)
-      transcription: messageType === "audio" ? null : undefined,
+      transcription,
     });
 
     // ⭐ BROADCAST USING SSE
@@ -90,7 +93,12 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
       fileSize: message.fileSize,
       fileType: message.fileType,
       fileType: file.mimetype,
-      transcription: message.transcription, // null for now
+      // transcription: message.transcription, // null for now
+      
+       ...(message.transcription
+    ? { transcription: message.transcription }
+    : {}),
+
       createdAt: message.createdAt,
     });
 

@@ -211,6 +211,19 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
   const audioChunksRef = useRef([]);
 
 
+// ⭐ Browser Speech-to-Text
+const SpeechRecognition = 
+  typeof window !== "undefined" &&
+  (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+const recognitionRef = useRef(null);
+const [liveText, setLiveText] = useState("");
+
+useEffect(() => {
+  console.log("Live text:", liveText);
+}, [liveText]);
+
+
   // ⭐ Autofocus on mount
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 150);
@@ -428,6 +441,7 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
   --------------------------------------------------- */
   const startRecording = async () => {
     try {
+      console.log("SpeechRecognition:", SpeechRecognition);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       audioChunksRef.current = [];
@@ -448,6 +462,34 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
 
       recorder.start();
       mediaRecorderRef.current = recorder;
+
+          // ⭐ START BROWSER SPEECH RECOGNITION
+    if (SpeechRecognition) {
+      const recog = new SpeechRecognition();
+      recog.continuous = true;
+      recog.interimResults = true;
+      recog.lang = "en-IN";
+
+      recog.onresult = (e) => {
+        console.log("Speech detected:", e.results);
+        const transcript = Array.from(e.results)
+          .map((r) => r[0].transcript)
+          .join("");
+
+          console.log("Live transcript:", transcript);
+        setLiveText(transcript);
+      };
+
+      recog.onerror = (e) => console.log("Speech error:", e.error);
+      recog.start();
+      recognitionRef.current = recog;
+    }
+
+
+
+
+
+
       setIsRecording(true);
     } catch (err) {
       console.log("Mic permission / recording error:", err);
@@ -461,6 +503,15 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
         .getTracks()
         .forEach((track) => track.stop());
     }
+
+    // ⭐ STOP SPEECH RECOGNITION
+  if (recognitionRef.current) {
+    recognitionRef.current.stop();
+    recognitionRef.current = null;
+  }
+
+
+
     setIsRecording(false);
   };
 
@@ -487,6 +538,8 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
     formData.append("name", userName);
     formData.append("avatar", userAvatar); // ⭐ ADDED
     formData.append("type", "audio"); // 👈 important for backend
+
+    formData.append("transcription", liveText); // ⭐ NEW
 
     const res = await fetch("http://localhost:5001/api/messages/upload", {
       method: "POST",
