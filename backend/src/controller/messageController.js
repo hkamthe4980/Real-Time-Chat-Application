@@ -9,7 +9,8 @@ export const sendMessage = async (req, res) => {
   try {
     console.log("req body", req.body)
     console.log("req body", req.body)
-    const { groupId, sender, text, mentions, name, avatar } = req.body;
+    // const { groupId, sender, text, mentions, name, avatar } = req.body;
+    const { groupId, sender, text, mentions, name, avatar, replyTo } = req.body; // ⭐ dropdown + new variable
     console.log("name comes from frontend side", name)
     console.log("name comes from frontend side", name)
 
@@ -21,6 +22,7 @@ export const sendMessage = async (req, res) => {
       sender,
       text,
       mentions,
+      replyTo: replyTo || null  // ⭐ save reply reference
     });
 
     // The message is broadcast to the Group Chat. (Only people currently inside that group see this).
@@ -32,6 +34,7 @@ export const sendMessage = async (req, res) => {
       avatar, // ⭐ Include avatar in broadcast
       text,
       mentions,
+      replyTo,  // ⭐ send to frontend also
       createdAt: message.createdAt
     });
     //- Lines 1-36: The message is saved to MongoDB.
@@ -74,7 +77,8 @@ export const getGroupMessages = async (req, res) => {
     const groupId = req.params.groupId.trim();
     const msgs = await Message.find({ groupId })
       .populate("sender", "name email avatar")
-      .populate("mentions", "name email");
+      .populate("mentions", "name email")
+      .populate("replyTo", "text fileUrl fileName") 
     //  console.log("messages" , msgs)
     res.json(msgs);
   } catch (err) {
@@ -128,3 +132,38 @@ export const getUserGroupsWithLastMessage = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const addReaction = async (req, res) => {
+  try {
+    console.log("Incoming Reaction BODY:", req.body);
+
+    const { messageId, userId, emoji, groupId } = req.body;
+
+    const message = await Message.findById(messageId);
+    if (!message) return res.status(404).json({ error: "Message not found" });
+
+    const realGroupId = groupId || message.groupId.toString();
+    console.log("Using GroupId:", realGroupId);
+
+    // Remove old reaction
+    message.reactions = message.reactions.filter(
+      (r) => r.userId.toString() !== userId
+    );
+
+    // Add reaction
+    message.reactions.push({ userId, emoji });
+    await message.save();
+
+    // Broadcast to this group
+    sendEventToGroup(realGroupId, {
+      type: "updated-message",
+      messageId,
+      reactions: message.reactions,
+    });
+
+    res.json({ success: true, reactions: message.reactions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

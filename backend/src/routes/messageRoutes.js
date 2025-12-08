@@ -6,6 +6,8 @@ import {
   getGroupMessages,
   getUserGroupsWithLastMessage
 } from "../controller/messageController.js";
+import { addReaction } from "../controller/messageController.js";
+
 
 import { verifyToken } from "../middleware/authMiddleware.js";
 import Message from "../models/groupMessageModel.js"; // ⭐ ADDED
@@ -115,5 +117,11 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   }
 }
 );
+
+
+
+router.post("/react", verifyToken, addReaction);
+
+
 
 export default router;

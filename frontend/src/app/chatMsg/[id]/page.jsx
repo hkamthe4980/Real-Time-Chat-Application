@@ -223,6 +223,11 @@ const ChatMsg = () => {
   const [groupData, setGroupData] = useState(null);
   console.log("UserName from decode token", username)
 
+  // change for recation emoji
+  const getMessageId = (m) => m._id || m.id;
+  const [replyMsg, setReplyMsg] = useState(null); 
+
+
 
   //? get logged-in user details
   useEffect(() => {
@@ -280,6 +285,14 @@ const ChatMsg = () => {
       content: msg.text || "",
       // ⭐ VERY IMPORTANT: keep original type (= 'audio' from SSE / DB)
       type: msg.type || (msg.fileUrl ? "file" : "text"),
+
+      replyTo: msg.replyTo ? {
+  id: msg.replyTo._id,
+   text: msg.replyTo.text,
+   type: msg.replyTo.type,
+   fileUrl: msg.replyTo.fileUrl
+ } : null,
+
       fileUrl: msg.fileUrl || null,
       fileName: msg.fileName || null,
       fileSize: msg.fileSize || null,
@@ -291,6 +304,8 @@ const ChatMsg = () => {
       }),
       createdAt: msg.createdAt,
       mentions: msg.mentions || [],
+      reactions: msg.reactions || [],
+
     };
   };
 
@@ -369,6 +384,40 @@ const ChatMsg = () => {
         return;
       }
 
+      // for reaction 
+//     if (data.type === "updated-message") {
+//   setMessages(prevMessages =>
+//     prevMessages.map(msg =>
+//       (msg.id === data.messageId || msg._id === data.messageId)
+//         ? { ...msg, reactions: data.reactions }
+//         : msg
+//     )
+//   );
+//   return;
+// }
+
+//  Reaction update from SSE
+if (data.type === "updated-message") {
+  console.log("🔁 SSE reaction update for:", data.messageId);
+
+  // Re-fetch latest messages so all users see same reactions
+  getGroupMessages(groupId)
+    .then((dataFromApi) => {
+      console.log("Refreshing messages after reaction");
+      setMessages(dataFromApi.map(mapMessage));
+    })
+    .catch((err) => {
+      console.error("Error refreshing messages after reaction:", err);
+    });
+
+  return; // don't continue into normal message logic
+}
+
+
+
+
+
+
 
       // ----------------------------------------------------
       //? ⭐ NORMAL MESSAGE
@@ -406,6 +455,14 @@ const ChatMsg = () => {
         minute: "2-digit",
       }),
       mentions,
+      replyTo: replyMsg ? {
+   id: replyMsg.id,
+
+  text: replyMsg.content || replyMsg.text,  // keep this for text
+  fileUrl: replyMsg.fileUrl || null,
+  fileName: replyMsg.fileName || null,
+  type: replyMsg.type || null 
+} : null,
     };
 
     setMessages((prev) => [...prev, optimisticMsg]);
@@ -420,6 +477,7 @@ const ChatMsg = () => {
       mentions,
       isUrgent,
       name: username,
+      replyTo: replyMsg?.id || replyMsg?._id || null // ← ADD THIS
     });
   };
 
@@ -435,7 +493,12 @@ const ChatMsg = () => {
       <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
         <ChatMain
           messages={messages}
+          setMessages={setMessages}   
           userId={loggedInUserId}
+          groupId={groupId}
+          setReplyMsg={setReplyMsg}
+
+          
         />
         {typingUsers.length > 0 && (
           <div className="flex items-end space-x-2 mb-3 px-2">
@@ -466,6 +529,8 @@ const ChatMsg = () => {
         senderId={loggedInUserId}
         userName={username}
         userAvatar={userAvatar}
+        replyPreview={replyMsg}
+        clearReply={() => setReplyMsg(null)}
       />
     </div>
   );

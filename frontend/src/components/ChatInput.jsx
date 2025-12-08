@@ -183,10 +183,16 @@ import { jwtDecode } from "jwt-decode";
 import { AiOutlinePaperClip } from "react-icons/ai";
 import { FaMicrophone } from "react-icons/fa";
 
-const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) => {
+// for emoji panel
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
+
+
+const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar, replyPreview, clearReply }) => {
   // console.log("ChatInput Props - userAvatar:", userAvatar);
   const [text, setText] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
+  // const [replyPreview, setReplyPreview] = useState(null); 
 
   const [results, setResults] = useState([]);
   const [mentions, setMentions] = useState([]);
@@ -209,6 +215,41 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
   const [audioPreviewUrl, setAudioPreviewUrl] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // for emoji panal
+  // const [message, setMessage] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiBtnRef = useRef(null);
+const pickerRef = useRef(null);
+
+// ⭐ Insert emoji at cursor inside textarea
+const handleEmojiSelect = (emoji) => {
+  const cursor = inputRef.current.selectionStart;
+  const before = text.slice(0, cursor);
+  const after = text.slice(cursor);
+
+  setText(before + emoji.native + after);
+
+  setTimeout(() => {
+    inputRef.current.focus();
+    inputRef.current.selectionEnd = cursor + emoji.native.length;
+  }, 10);
+};
+
+// ⭐ CLOSE EMOJI PICKER WHEN CLICK OUTSIDE
+useEffect(() => {
+  function handleOutside(e) {
+    if (
+      pickerRef.current &&
+      !pickerRef.current.contains(e.target) &&
+      !emojiBtnRef.current.contains(e.target)
+    ) {
+      setShowEmojiPicker(false);
+    }
+  }
+  document.addEventListener("mousedown", handleOutside);
+  return () => document.removeEventListener("mousedown", handleOutside);
+}, []);
 
 
 // ⭐ Browser Speech-to-Text
@@ -319,6 +360,7 @@ useEffect(() => {
       text: trimmed,
       mentions,
       isUrgent,
+      replyTo: replyPreview?._id || null
     });
 
     setText("");
@@ -572,6 +614,24 @@ useEffect(() => {
   return (
     <div className="relative bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-2px_6px_rgba(0,0,0,0.05)]">
 
+    {replyPreview && (
+   <div className="bg-gray-200 p-2 rounded-lg mb-2 flex justify-between items-center border-l-4 border-blue-500">
+     <div>
+       <p className="text-xs text-gray-600">Replying to:</p>
+       <p className="font-semibold text-sm">
+  {
+    replyPreview.content?.slice(0,40)
+    || replyPreview.text?.slice(0,40)
+    || replyPreview.fileName?.slice(0,30)
+    || (replyPreview.type === "audio" ? "Audio File" : "")
+    || (replyPreview.type === "file" ? "File Attachment" : "")
+  }
+</p>
+     </div>
+     <button onClick={clearReply} className="text-red-500 font-bold px-2">×</button>
+   </div>
+ )}
+
       {/* ⭐ FLOATING WHATSAPP-STYLE FILE PREVIEW (EXISTING) */}
       {pendingFile && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-white p-4 rounded-xl shadow-xl border z-50 w-[260px]">
@@ -722,6 +782,17 @@ useEffect(() => {
               </div>
             )}
           </div>
+          
+          {/* ⭐ EMOJI BUTTON (ADD HERE BEFORE MIC BUTTON) */}
+<button
+  type="button"
+  ref={emojiBtnRef}
+  onClick={() => setShowEmojiPicker((p) => !p)}
+  className="min-w-11 min-h-11 bg-gray-200 rounded-full flex items-center justify-center text-xl hover:bg-gray-300 active:scale-95"
+>
+  😊
+</button>
+
 
           {/* ⭐ MIC BUTTON (NEW) */}
           <button
@@ -743,6 +814,21 @@ useEffect(() => {
 
         </div>
       </form>
+
+      {/* ⭐ EMOJI PICKER POPUP UI */}
+{showEmojiPicker && (
+  <div
+    ref={pickerRef}
+    className="absolute bottom-24 right-12 z-[999] shadow-xl"
+  >
+    <Picker
+      data={data}
+      theme="light"
+      onEmojiSelect={handleEmojiSelect}
+    />
+  </div>
+)}
+
     </div>
 
 
