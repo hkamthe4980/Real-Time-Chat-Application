@@ -21,7 +21,7 @@ export default function ChatInput({ groupId, senderId }) {
 
   const inputRef = useRef();
 
- 
+
 
   useEffect(() => {
 
@@ -49,7 +49,7 @@ export default function ChatInput({ groupId, senderId }) {
     if (!groupId) return;
 
     const eventSource = new EventSource(
-      `http://localhost:5000/api/sse/stream/${groupId}`
+      `http://localhost:5001/api/sse/stream/${groupId}`
     );
 
     eventSource.onmessage = (event) => {
@@ -123,7 +123,7 @@ export default function ChatInput({ groupId, senderId }) {
 
     const token = localStorage.getItem("token");
     const currentUser = token ? jwtDecode(token) : null;
-    console.log("current user from token localstorage" , currentUser.name)
+    console.log("current user from token localstorage", currentUser.name)
     if (!text.trim()) return;
     //  console.log("message from frontend " , messages.sender.name)
     await sendGroupMessage({
@@ -158,8 +158,8 @@ export default function ChatInput({ groupId, senderId }) {
               typeof msg.sender === "string"
                 ? msg.sender
                 : msg.sender?._id;
-                // console.log("senderIdfrommsg" , senderIdFromMsg);
-                // console.log("senderIf from Jwt" , senderId)
+            // console.log("senderIdfrommsg" , senderIdFromMsg);
+            // console.log("senderIf from Jwt" , senderId)
 
             const isSender = senderIdFromMsg === senderId;
 
@@ -176,8 +176,8 @@ export default function ChatInput({ groupId, senderId }) {
 
                 <div
                   className={`max-w-xs sm:max-w-md px-4 py-2 rounded-2xl shadow ${isSender
-                      ? "bg-blue-600 text-white rounded-br-none"
-                      : "bg-white text-gray-800 rounded-bl-none"
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-white text-gray-800 rounded-bl-none"
                     }`}
                 >
                   <p className={`text-sm ${isSender ? "text-white/80" : "text-gray-500"}`}>

@@ -15,6 +15,15 @@ const messageSchema = new mongoose.Schema({
   // ⭐ ADDED FOR AUDIO TRANSCRIPTION (voice → text saved in backend)
   transcription: { type: String },
 
+  // ⭐ REACTIONS 
+  reactions: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "WayBeyondUser" },
+      emoji: { type: String },
+    }
+  ],
+  replyTo: { type: mongoose.Schema.Types.ObjectId, ref: "GroupMessageChat", default: null },
+
   //? edit & delete
   isDeleted: { type: Boolean, default: false },
   isEdited: { type: Boolean, default: false },

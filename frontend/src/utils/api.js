@@ -1,6 +1,6 @@
 
 
-// const BASE_URL = "/api"; // Next.js will rewrite → backend http://localhost:5000/api
+// const BASE_URL = "/api"; // Next.js will rewrite → backend http://localhost:5001/api
 
 
 export async function apiRequest(endpoint, method = "GET", body = null) {
@@ -103,11 +103,11 @@ export const getUserGroupsWithLastMessage = async () => {
 };
 
 //? edit message
-export const editGroupMessage = async (msgId, editedMsg) => {
-  return await apiRequest(`/message/edit/${msgId}`, "PATCH", { text: editedMsg });
-}
+// export const editGroupMessage = async (msgId, editedMsg) => {
+//   return await apiRequest(`/message/edit/${msgId}`, "PATCH", { text: editedMsg });
+// }
 
 //? delete message
-export const deleteGroupMessage = async (msgId) => {
-  return await apiRequest(`/message/delete/${msgId}`, "Delete");
-}
+// export const deleteGroupMessage = async (msgId) => {
+//   return await apiRequest(`/message/delete/${msgId}`, "Delete");
+// }

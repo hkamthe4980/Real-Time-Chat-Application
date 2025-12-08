@@ -22,6 +22,10 @@ const ChatMsg = () => {
   const [groupData, setGroupData] = useState(null);
   console.log("UserName from decode token", username)
 
+  // change for recation emoji
+  const getMessageId = (m) => m._id || m.id;
+  const [replyMsg, setReplyMsg] = useState(null);
+
 
   //? get logged-in user details
   useEffect(() => {
@@ -64,7 +68,6 @@ const ChatMsg = () => {
   //? user online status
   const [onlineUsers, setOnlineUsers] = useState([]);
 
-
   //? ⭐ Convert backend → UI format - Vaish
   const mapMessage = (msg) => {
     //? grab sender details:
@@ -82,6 +85,14 @@ const ChatMsg = () => {
       content: msg.text || "",
       // ⭐ VERY IMPORTANT: keep original type (= 'audio' from SSE / DB)
       type: msg.type || (msg.fileUrl ? "file" : "text"),
+
+      replyTo: msg.replyTo ? {
+        id: msg.replyTo._id,
+        text: msg.replyTo.text,
+        type: msg.replyTo.type,
+        fileUrl: msg.replyTo.fileUrl
+      } : null,
+
       fileUrl: msg.fileUrl || null,
       fileName: msg.fileName || null,
       fileSize: msg.fileSize || null,
@@ -93,6 +104,7 @@ const ChatMsg = () => {
       }),
       createdAt: msg.createdAt,
       mentions: msg.mentions || [],
+      reactions: msg.reactions || [],
     };
   };
 
@@ -181,6 +193,24 @@ const ChatMsg = () => {
     // 5. New Message Event
     es.addEventListener("new_message", (event) => {
       const data = JSON.parse(event.data);
+
+      //*  Reaction update from SSE - added from vaish
+      if (data.type === "updated-message") {
+        console.log("🔁 SSE reaction update for:", data.messageId);
+
+        // Re-fetch latest messages so all users see same reactions
+        getGroupMessages(groupId)
+          .then((dataFromApi) => {
+            console.log("Refreshing messages after reaction");
+            setMessages(dataFromApi.map(mapMessage));
+          })
+          .catch((err) => {
+            console.error("Error refreshing messages after reaction:", err);
+          });
+
+        return;
+      }
+
       const incomingSender = data.sender || data.senderId;
 
       if (incomingSender === loggedInUserId) return;
@@ -205,6 +235,8 @@ const ChatMsg = () => {
         setMessages((prev) => [...prev, mapMessage(data)]);
       }
     });
+
+
 
     es.onerror = () => {
       console.log("❌ SSE Disconnected");
@@ -266,6 +298,15 @@ const ChatMsg = () => {
         minute: "2-digit",
       }),
       mentions,
+      replyTo: replyMsg
+        ? {
+          id: replyMsg.id,
+          text: replyMsg.content || replyMsg.text,  // keep this for text
+          fileUrl: replyMsg.fileUrl || null,
+          fileName: replyMsg.fileName || null,
+          type: replyMsg.type || null
+        }
+        : null,
     };
 
     addMessageToState(optimisticMsg);
@@ -280,12 +321,13 @@ const ChatMsg = () => {
       mentions,
       isUrgent,
       name: username,
+      replyTo: replyMsg?.id || replyMsg?._id || null // ← ADD THIS
     });
   };
 
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden bg-gray-50">
+    <div className="flex flex-col h-screen w-full bg-gray-50">
       <ChatHeader
         conversation={{ name: groupData?.name, id: groupId, avatar: groupData?.avatar }}
         onlineCount={onlineUsers.length} // ⭐ Pass online count
@@ -293,10 +335,13 @@ const ChatMsg = () => {
       />
 
       {/* Messages + Typing - ChatMain */}
-      <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
+      <div className="flex-1 overflow-hidden min-h-0 bg-gray-50 relative">
         <ChatMain
           messages={messages}
+          setMessages={setMessages}
           userId={loggedInUserId}
+          groupId={groupId}
+          setReplyMsg={setReplyMsg}
         />
         {typingUsers.length > 0 && (
           <div className="flex items-end space-x-2 mb-3 px-2">
@@ -334,6 +379,8 @@ const ChatMsg = () => {
         senderId={loggedInUserId}
         userName={username}
         userAvatar={userAvatar}
+        replyPreview={replyMsg}
+        clearReply={() => setReplyMsg(null)}
       />
     </div>
   );

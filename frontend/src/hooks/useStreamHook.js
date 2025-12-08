@@ -37,14 +37,14 @@ export default function useStreamResponse() {
     const id = conversationId ?? "";
 
     const eventSource = new EventSource(
-      `http://localhost:5000/api/chat/stream?prompt=${encodeURIComponent(
+      `http://localhost:5001/api/chat/stream?prompt=${encodeURIComponent(
         prompt
       )}&conversationId=${id}&token=${token}`
     );
 
     eventRef.current = eventSource;
 
-    eventSource.onmessage =async (event) => {
+    eventSource.onmessage = async (event) => {
       if (event.data === "[DONE]") {
         eventSource.close();
         setLoading(false);
@@ -67,13 +67,13 @@ export default function useStreamResponse() {
         // ERRORS
         if (json.error) {
           setErrormsg(json.error);
-          
+
           // Handle specific error types
           if (json.type === "rate_limit") {
             // Queue for retry with exponential backoff
-            const retryAfter = json.retryAfter || 5000;
+            const retryAfter = json.retryAfter || 5001;
             console.log(`Rate limited, queuing for retry in ${retryAfter}ms`);
-            
+
             // Auto-retry logic (max 5 attempts)
             if (retryCount < 5) {
               setIsRetrying(true);
@@ -88,7 +88,7 @@ export default function useStreamResponse() {
               setIsRetrying(false);
             }
           }
-          
+
           if (json.type === "bad_request" || json.type === "auth_error") {
             // Don't retry for user errors or auth issues
             setLoading(false);
@@ -96,10 +96,10 @@ export default function useStreamResponse() {
             eventSource.close();
             return;
           }
-          
+
           if (json.type === "service_error") {
             // Retry with exponential backoff for service errors
-            const retryAfter = json.retryAfter || 5000;
+            const retryAfter = json.retryAfter || 5001;
             if (retryCount < 5) {
               setIsRetrying(true);
               setRetryCount(prev => prev + 1);
@@ -113,7 +113,7 @@ export default function useStreamResponse() {
               setIsRetrying(false);
             }
           }
-          
+
           // Default error handling
           setLoading(false);
           setIsThinking(false);

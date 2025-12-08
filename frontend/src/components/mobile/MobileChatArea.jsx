@@ -108,7 +108,7 @@ const MobileChatArea = ({ conversation, onBack, onProfileClick, senderId }) => {
     if (!groupId) return;
 
     const eventSource = new EventSource(
-      `http://localhost:5000/api/sse/stream/${groupId}`
+      `http://localhost:5001/api/sse/stream/${groupId}`
     );
 
     eventSource.onmessage = (event) => {

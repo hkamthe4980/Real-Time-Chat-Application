@@ -10,9 +10,10 @@ import {
   sendMessage,
   getGroupMessages,
   getUserGroupsWithLastMessage,
-  editMessage,
-  deleteMessage,
+  // editMessage,
+  // deleteMessage,
 } from "../controller/messageController.js";
+import { addReaction } from "../controller/messageController.js";
 
 import { verifyToken } from "../middleware/authMiddleware.js";
 import Message from "../models/groupMessageModel.js"; // ⭐ ADDED
@@ -27,10 +28,10 @@ router.get("/group/:groupId", getGroupMessages);
 router.get("/get-groups", verifyToken, getUserGroupsWithLastMessage);
 
 //* Edit Msg
-router.patch("/edit/:id", verifyToken, editMessage);
+// router.patch("/edit/:id", verifyToken, editMessage);
 
 //* Delete Msg
-router.delete("/delete/:id", verifyToken, deleteMessage);
+// router.delete("/delete/:id", verifyToken, deleteMessage);
 
 /* -----------------------------------------------------------
     ⭐ MULTER STORAGE FOR FILE UPLOADS
@@ -136,5 +137,8 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   }
 }
 );
+
+
+router.post("/react", verifyToken, addReaction);
 
 export default router;

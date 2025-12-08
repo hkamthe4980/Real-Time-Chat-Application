@@ -331,7 +331,7 @@
 // //     // Real-time SSE connect
 // //     // ----------------------------------
 // //     const eventSource = new EventSource(
-// //       `http://localhost:5000/api/sse/stream/${groupId}`
+// //       `http://localhost:5001/api/sse/stream/${groupId}`
 // //     );
 
 // //     eventSource.onmessage = (e) => {
