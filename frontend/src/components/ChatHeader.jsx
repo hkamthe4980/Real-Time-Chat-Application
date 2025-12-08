@@ -3,7 +3,8 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 // import '@/styles/chat.css';
 
-const ChatHeader = ({ conversation }) => {
+const ChatHeader = ({ conversation, onlineCount }) => {
+  // console.log("onlineCount", onlineCount);
   const router = useRouter();
   if (!conversation) return null;
 
@@ -35,18 +36,14 @@ const ChatHeader = ({ conversation }) => {
         <button onClick={() => router.push(`/profile?groupId=${conversation.id}`)} className="text-left min-w-0 flex-1">
           <h2 className="text-lg sm:text-xl font-semibold text-black truncate hover:text-gray-700 transition-colors">{conversation.name}</h2>
           <div className="flex items-center space-x-2 text-sm sm:text-base text-gray-600">
-            {conversation.isOnline ? (
+            {/* Show online user count */}
+            {onlineCount !== undefined && onlineCount > 0 && (
               <>
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span>Online</span>
-              </>
-            ) : (
-              <span className="truncate">{conversation.lastSeen || 'Offline'}</span>
-            )}
-            {conversation.isGroup && (
-              <>
-                <span>•</span>
-                <span>{conversation.memberCount} members</span>
+                {onlineCount !== undefined && onlineCount > 0 && (
+                  <span className="text-green-600 font-medium ml-1">
+                    {onlineCount} online
+                  </span>
+                )}
               </>
             )}
             {!conversation.isGroup && conversation.position && (

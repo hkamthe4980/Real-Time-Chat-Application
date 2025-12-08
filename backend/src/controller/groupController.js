@@ -48,7 +48,7 @@ export const searchGroupMembers = async (req, res) => {
     const members = await User.find({
       _id: { $in: group.members },
       name: { $regex: query, $options: "i" },
-    }).select("name email");
+    }).select("name email avatar");
 
     console.log("members:", members);
     res.json(members);
@@ -118,7 +118,7 @@ export const getGroupProfile = async (req, resp) => {
                 $expr: { $in: ["$_id", "$$memberObjIds"] }
               }
             },
-            { $project: { _id: 1, name: 1, avatar: 1, isOnline: 1 } }
+            { $project: { _id: 1, name: 1, avatar: 1, isOnline: 1, lastSeen: 1 } }
           ],
           //? new `members` field
           as: "membersInfo"

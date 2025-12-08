@@ -1,17 +1,21 @@
 import express from "express";
 import { verifyToken } from "../middleware/authMiddleware.js";
+import User from "../models/userModel.js"; // ⭐ Import User model
 
 const router = express.Router();
 
 // ⭐ Store all clients by group
 let clients = [];
-// each entry = { id, groupId, res }
+// each entry = { id, groupId, userId, userName, userAvatar, res }
 
 // -------------------------------------------------------
-// ⭐ SSE Stream Route
+// ⭐ SSE Stream Route (with Presence)
 // -------------------------------------------------------
-router.get("/stream/:groupId", (req, res) => {
+router.get("/stream/:groupId", verifyToken, async (req, res) => {
+  //? Extract the group ID and user details from the request body
   const groupId = req.params.groupId;
+  const { _id, name: userName, avatar: userAvatar } = req.user;
+  const userId = _id.toString();
 
   // Required SSE headers
   //? The res.setHeader(...) calls are mandatory for SSE
@@ -23,44 +27,112 @@ router.get("/stream/:groupId", (req, res) => {
   //? Sends these headers to the client immediately. The connection is now officially open.
   res.flushHeaders();
 
-  const client = { id: Date.now(), groupId, res };
-  clients.push(client);
+  // --- PRESENCE LOGIC: ON CONNECTION ---
 
-  console.log(`💚 Client connected to group ${groupId} → ID: ${client.id}`);
+  //* Update DB: User is Online
+  try {
+    // await User.findByIdAndUpdate(userId, { isOnline: true }, {
+    //   // Ensures schema rules applied
+    //   runValidators: true 
+    // });
+    await User.findByIdAndUpdate(userId, { isOnline: true });
+  } catch (error) {
+    console.error('Failed to update user online status:', error);
+  }
 
-  // Remove client on disconnect
-  //? This sets up a crucial event listener. This event automatically fires when the client closes the connection (e.g., closes the browser tab, navigates away).
-  req.on("close", () => {
-    console.log(`❌ Client ${client.id} disconnected`);
-    //? The callback function filters the clients array, creating a new array that includes everyone except the client that just disconnected. This is essential for cleanup and preventing memory leaks.
-    clients = clients.filter(c => c.id !== client.id);
+  // 1. Find who is already online in this group, ensuring unique users.
+  //? Get only client/user in this group
+  const groupClients = clients.filter((c) => c.groupId === groupId);
+  //? Create unique users/client list, using Map to avoid duplicates
+  const onlineUsersMap = new Map();
+  //? Check if the user/client is already in the map - if not then add the user/client
+  groupClients.forEach((c) => {
+    if (!onlineUsersMap.has(c.userId)) {
+      onlineUsersMap.set(c.userId, {
+        userId: c.userId,
+        userName: c.userName,
+        userAvatar: c.userAvatar,
+      });
+    }
+  })
+  //? Convert Map values to arr[] -> array of objs, good-to-go data format for frontend
+  const onlineUsers = Array.from(onlineUsersMap.values());
+
+  // 2. Send the initial list of online users ONLY to the new client.
+  res.write(`event: initial_presence_state\ndata: ${JSON.stringify(onlineUsers)}\n\n`);
+
+  // 3. Create the new client object and add it to the list.
+  const newClient = {
+    //! can collide if two connections occur in the same millisecond
+    id: Date.now(),
+    groupId,
+    userId,
+    userName,
+    userAvatar,
+    res,
+  };
+  clients.push(newClient);
+  console.log(`💚 Client connected to group ${groupId} → User: ${userName} (ID: ${newClient.id})`);
+
+  // 4. Announce the new user's arrival to EVERYONE in the group.
+  broadcastToGroup(groupId, "user_joined", { userId, userName, userAvatar });
+
+  // --- PRESENCE LOGIC: ON DISCONNECTION ---
+  //? The callback function filters the clients array, creating a new array that includes everyone except the client that just disconnected. This is essential for cleanup and preventing memory leaks.
+  req.on("close", async () => {
+    // First, remove the client from the list.
+    clients = clients.filter((c) => c.id !== newClient.id);
+    console.log(`❌ Client ${newClient.id} disconnected (User: ${userName})`);
+
+    // Check if this was the user's last connection to this specific group.
+    // This prevents sending a "user_left" event if they just closed one of multiple tabs.
+    //? Can use `filter()` but it needs full scan of the array so lil slower compare to `some()` --  meanwhile `some()` stops after first match
+    const isUserStillConnected = clients.some(
+      (c) => c.userId === userId && c.groupId === groupId
+    );
+
+    //? If the user is completely gone from the group, announce their departure to the remaining clients.
+    if (!isUserStillConnected) {
+      broadcastToGroup(groupId, "user_left", { userId });
+
+      //? Update DB: User is Offline + Last Seen
+      try {
+        await User.findByIdAndUpdate(userId, {
+          isOnline: false,
+          lastSeen: new Date()
+        });
+      } catch (error) {
+        console.error('Failed to update user online status:', error);
+      }
+    }
   });
 });
 
+
 // -------------------------------------------------------
-// ⭐ Broadcast any data (message, typing, alerts) to a group
+// ⭐ Broadcast any data with a named event to a group - filters clients by groupId and writes a named SSE event to each client’s res.
 // -------------------------------------------------------
-//? This function sends data to all clients in a specific group.
-export const broadcastToGroup = (groupId, data) => {
-  //? find relevant clients
+export const broadcastToGroup = (groupId, eventName, data) => {
+  //? filter group members
   const groupClients = clients.filter(
     (c) => c.groupId.toString() === groupId.toString()
   );
 
   //? send data to each client/user
   groupClients.forEach((client) => {
-    //? returns RAW SSE in frontend
-    client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+    client.res.write(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`);
   });
 
-  console.log(`📢 Broadcast to group ${groupId}:`, data);
+  if (groupClients.length > 0) {
+    console.log(`📢 Broadcast [${eventName}] to group ${groupId} (to ${groupClients.length} clients):`, data);
+  }
 };
 
 // -------------------------------------------------------
-// ⭐ (Optional) Example: Send new message event
+// ⭐ Example: Send new message event (Updated for named events) - broadcasts a named event to a specific group.
 // -------------------------------------------------------
 export const sendEventToGroup = (groupId, message) => {
-  broadcastToGroup(groupId, message);
+  broadcastToGroup(groupId, "new_message", message);
 };
 
 

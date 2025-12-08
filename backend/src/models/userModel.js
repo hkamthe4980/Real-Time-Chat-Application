@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   planType: { type: String, enum: ["free", "pro", "enterprise"], default: "free" },
   createdAt: { type: Date, default: Date.now },
+  isOnline: { type: Boolean, default: false },
+  lastSeen: { type: Date, default: Date.now },
 });
 
 export default mongoose.model("WayBeyondUser", userSchema, "waybeyondusers");

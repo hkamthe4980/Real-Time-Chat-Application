@@ -101,3 +101,13 @@ export const getGroupDetails = async (groupId) => {
 export const getUserGroupsWithLastMessage = async () => {
   return await apiRequest(`/messages/get-groups`, "GET");
 };
+
+//? edit message
+export const editGroupMessage = async (msgId, editedMsg) => {
+  return await apiRequest(`/message/edit/${msgId}`, "PATCH", { text: editedMsg });
+}
+
+//? delete message
+export const deleteGroupMessage = async (msgId) => {
+  return await apiRequest(`/message/delete/${msgId}`, "Delete");
+}

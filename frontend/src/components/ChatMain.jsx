@@ -1,13 +1,17 @@
+
 //* vaish
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { SiAudiobookshelf } from "react-icons/si";
 import { MdDownloading } from "react-icons/md";
+import { deleteGroupMessage, editGroupMessage } from "../utils/api";
+import { HiDotsVertical } from "react-icons/hi";
 
 const ChatMain = ({ messages, userId, typingUsers = [] }) => {
     const messagesEndRef = useRef(null);
     const scrollContainerRef = useRef(null);
+    const [messageToDelete, setMessageToDelete] = useState(null);
 
     // ⭐ FULLSCREEN IMAGE PREVIEW MODAL STATE
     const [previewImage, setPreviewImage] = useState(null);
@@ -109,8 +113,110 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
     // -------------------------------
     // ⭐ RENDER TEXT MESSAGE
     // -------------------------------
+    // ⭐ CONTEXT MENU STATE
+    // This state controls our message options menu
+    // visible → should the menu show?
+    // x, y → where the menu appears on screen
+    // messageId → which message the menu belongs to
+    const [menuState, setMenuState] = useState({
+        visible: false,
+        x: 0,
+        y: 0,
+        messageId: null
+    });
+
+    // we store longPressTimer so we can cancel it later
+    const longPressTimer = useRef(null);
+
+    // When user clicks anywhere on the page → close menu
+    useEffect(() => {
+        function closeMenu() {
+            setMenuState({
+                visible: false,
+                x: 0,
+                y: 0,
+                messageId: null
+            });
+        }
+
+        // Add a click listener to the whole window
+        window.addEventListener("click", closeMenu);
+
+        // Clean up the listener when component is removed
+        return () => window.removeEventListener("click", closeMenu);
+    }, []);
+
+    // ⭐ Long Press Handlers
+    const handleTouchStart = (e, message) => {
+        // Only allow actions for own messages
+        if (getSenderId(message.sender) !== userId) return;
+
+        // Get where the user's finger touched
+        const touchPoint = e.touches[0];
+
+        // Start a timer — if the user keeps touching for 300ms, show the menu
+        longPressTimer.current = setTimeout(() => {
+            setMenuState({
+                // show the menu
+                visible: true,
+                // where to show it:
+                // place menu at finger X
+                x: touchPoint.clientX,
+                // place menu at finger Y
+                y: touchPoint.clientY,
+                // attach menu to this message
+                messageId: message._id || message.id
+            });
+        }, 300); // 300ms threshold
+    };
+
+    // This runs when the user lifts their finger
+    const handleTouchEnd = () => {
+        // If the user didn’t hold long enough, cancel the timer
+        if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+        }
+    };
+
+    // ⭐ Handle Actions
+    const handleEdit = async (message) => {
+        // Ask user for new message text
+        const newText = prompt("Edit message:", message.content || message.text);
+
+        if (newText && newText !== message.content) {
+            try {
+                // message.id is typically 'messgaeId' mapped in page.jsx, but backend needs true _id
+                // Our mapMessage puts _id into id.
+                await editGroupMessage(message.id, newText);
+                console.log("Message edited");
+            } catch (err) {
+                console.error("Edit failed", err);
+                alert("Failed to edit message");
+
+            }
+        }
+    };
+
+    const handleDelete = async (messageId) => {
+        // console.log("Deleting msg ID:", messageId);
+        if (confirm("Delete this message?")) {
+            try {
+                await deleteGroupMessage(messageId);
+                console.log("Message deleted");
+            } catch (err) {
+                console.error("Delete failed", err);
+                alert("Failed to delete message");
+            }
+        }
+    };
+
+
     const renderTextMessage = (message, type, avatarUrl) => {
         const senderName = getSenderName(message.sender);
+        const isSent = type === "sent";
+
+        // Logic for Context Menu visibility on this specific message
+        const showMenu = menuState.visible && (menuState.messageId === (message._id || message.id));
 
         return type === "received" ? (
             <div key={message.id} className="flex items-start space-x-2 mb-3">
@@ -122,9 +228,10 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
                 />
 
                 {/* Message bubble & timestamp */}
-                <div className="max-w-[75%]">
+                <div className="max-w-[75%] relative">
                     <div className="bg-white text-black rounded-2xl rounded-bl-sm px-3 pr-10 pb-4 pt-2 shadow-sm relative">
                         <p className="text-[15px] leading-snug">{message.content}</p>
+
 
                         <span className="text-[9px] text-gray-400 absolute bottom-1 right-2 px-2">
                             {message.timestamp}
@@ -133,15 +240,66 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
                 </div>
             </div>
         ) : (
-            <div key={message.id} className="flex justify-end mb-3">
-                {/* Message bubble & timestamp */}
-                <div className="max-w-[75%]">
-                    <div className="bg-black text-white rounded-2xl rounded-br-sm px-3 pr-10 pb-4 pt-2 shadow-sm relative">
-                        <p className="text-[15px] leading-snug">{message.content}</p>
+            <div key={message.id} className="flex justify-end mb-3 relative">
+                <div className="flex items-end group">
 
-                        <span className="text-[9px] text-gray-300 absolute bottom-1 right-2 px-1">
-                            {message.timestamp}
-                        </span>
+                    {/* Message bubble & timestamp */}
+                    <div
+                        className="max-w-[75%] relative select-none"
+                        onTouchStart={(e) => handleTouchStart(e, message)}
+                        onTouchEnd={handleTouchEnd}
+                        onMouseDown={(e) => {
+                            // Also support desktop long press or right click simulation
+                            if (getSenderId(message.sender) !== userId) return;
+                            longPressTimer.current = setTimeout(() => {
+                                setContextMenu({
+                                    visible: true,
+                                    x: e.clientX,
+                                    y: e.clientY,
+                                    messageId: message._id || message.id
+                                });
+                            }, 500);
+                        }}
+                        onMouseUp={handleTouchEnd}
+                        onMouseLeave={handleTouchEnd}
+                    >
+                        <div className="bg-black text-white rounded-2xl rounded-br-sm px-3 pr-10 pb-4 pt-2 shadow-sm relative cursor-pointer active:opacity-80 transition-opacity">
+                            <p className="text-[15px] leading-snug">{message.content}</p>
+
+                            <span className="text-[9px] text-gray-300 absolute bottom-1 right-2 px-1">
+                                {message.timestamp}
+                            </span>
+                        </div>
+
+                        {/* ⭐ Context Menu Overlay */}
+                        {showMenu && (
+                            <div
+                                className="absolute top-10 right-0 bg-white shadow-xl border border-gray-200 rounded-lg p-1 z-50 w-32 flex flex-col"
+                                style={{ animation: "fadeIn 0.2s ease-out" }}
+                            >
+                                <button
+                                    className="text-left px-3 py-2 hover:bg-gray-100 text-sm text-gray-800 rounded-md"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEdit(message);
+                                        setMenuState({ visible: false, x: 0, y: 0, messageId: null });
+                                    }}
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    className="text-left px-3 py-2 hover:bg-gray-100 text-sm text-red-600 rounded-md"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(message._id || message.id);
+                                        setMenuState({ visible: false, x: 0, y: 0, messageId: null });
+                                    }}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </div>
@@ -222,7 +380,7 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
 
 
     const renderMessage = (message) => {
-        console.log("mesage", message)
+        // console.log("mesage", message)
         const senderId = getSenderId(message.sender);
         const senderName = getSenderName(message.sender);
         const senderAvatar = getSenderAvatar(message.sender);
@@ -231,7 +389,7 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
         const type = senderId === userId ? "sent" : "received";
 
         // ⭐ Create dynamic avatar (Unified logic for all message types)
-        console.log("senderAvatar:", senderAvatar);
+        // console.log("senderAvatar:", senderAvatar);
         const avatarUrl = senderAvatar;
 
         // ⭐ FIRST check AUDIO
@@ -248,7 +406,9 @@ const ChatMain = ({ messages, userId, typingUsers = [] }) => {
         return renderTextMessage(message, type, avatarUrl);
     };
 
-
+    // -------------------------------
+    // ⭐ RENDER CHAT
+    // ------------------------------
     return (
         <div
             ref={scrollContainerRef}

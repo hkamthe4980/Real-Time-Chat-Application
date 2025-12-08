@@ -15,6 +15,11 @@ const messageSchema = new mongoose.Schema({
   // ⭐ ADDED FOR AUDIO TRANSCRIPTION (voice → text saved in backend)
   transcription: { type: String },
 
+  //? edit & delete
+  isDeleted: { type: Boolean, default: false },
+  isEdited: { type: Boolean, default: false },
+  editedAt: { type: Date },
+
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -8,10 +8,8 @@ import { sendEventToGroup, sendNotificationToUser } from "../routes/sseRoutes.js
 export const sendMessage = async (req, res) => {
   try {
     console.log("req body", req.body)
-    console.log("req body", req.body)
     const { groupId, sender, text, mentions, name, avatar } = req.body;
-    console.log("name comes from frontend side", name)
-    console.log("name comes from frontend side", name)
+    // console.log("name comes from frontend side", name);
 
     const group = await Group.findById(groupId);
     if (!group) return res.status(404).json({ error: "Group not found" });
@@ -72,7 +70,7 @@ export const sendMessage = async (req, res) => {
 export const getGroupMessages = async (req, res) => {
   try {
     const groupId = req.params.groupId.trim();
-    const msgs = await Message.find({ groupId })
+    const msgs = await Message.find({ groupId, isDeleted: false })
       .populate("sender", "name email avatar")
       .populate("mentions", "name email");
     //  console.log("messages" , msgs)
@@ -81,6 +79,73 @@ export const getGroupMessages = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+//* Edit Message
+export const editMessage = async (req, resp) => {
+  const msgId = req.params.id;
+  const { text } = req.body;
+
+  try {
+    const msg = await Message.findById(msgId);
+    if (!msg) return resp.status(404).json({ error: "Message not found" });
+
+    //? check permission - sender verification 
+    if (msg.sender.toString() !== req.user.id) {
+      return resp.status(403).json({ error: "Permission denied" });
+    }
+
+    //? msg modal fields
+    msg.text = text;
+    msg.isEdited = true;
+    msg.editedAt = new Date();
+    //? save msg
+    await msg.save();
+
+    //? Broadcast edit event
+    sendEventToGroup(msg.groupId.toString(), {
+      type: "MESSAGE_EDITED",
+      payload: msg
+    });
+
+    resp.status(200).json({ message: "Message edited successfully", msg });
+  }
+  catch (err) {
+    resp.status(500).json({ error: "Failed to edit message", error: err.message })
+  }
+}
+
+//* Delete Message
+export const deleteMessage = async (req, resp) => {
+  const msgId = req.params.id;
+
+  try {
+    const msg = await Message.findById(msgId);
+    if (!msg) return resp.status(404).json({ error: "Message not found" });
+
+    //? check permission - sender verification 
+    if (msg.sender.toString() !== req.user.id) {
+      return resp.status(403).json({ error: "Permission denied" });
+    }
+
+    //? update deleted fields
+    msg.isDeleted = true;
+    // msg.deletedAt = new Date();
+    //? save msg
+    await msg.save();
+
+    //? Broadcast delete event
+    sendEventToGroup(msg.groupId.toString(), {
+      type: "MESSAGE_DELETED",
+      payload: msg
+    });
+
+    resp.status(200).json({ message: "Message deleted successfully", msg });
+  }
+  catch (err) {
+    resp.status(500).json({ error: "Failed to delete message", error: err.message })
+  }
+
+}
 
 
 

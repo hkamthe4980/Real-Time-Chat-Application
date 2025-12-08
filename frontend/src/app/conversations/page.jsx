@@ -1,16 +1,16 @@
 'use client';
-import React, { useState , useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ChatNavigation from '@/components/ChatNavigation';
 import { PiChatsFill } from "react-icons/pi";
 import { IoCall } from "react-icons/io5";
 import { RxUpdate } from "react-icons/rx";
 import { getUserGroupsWithLastMessage } from '@/utils/api';
- 
+
 
 const Conversations = ({ selectedConversation, onSelectConversation }) => {
-    const router = useRouter();
-    
+  const router = useRouter();
+
   const [activeFilter, setActiveFilter] = useState('All');
 
   const filters = ['All', 'Unread', 'Urgent', 'Groups'];
@@ -63,28 +63,28 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
   //     timestamp: '2d'
   //   }
   // ]);
-  
-   const [conversations, setConversations] = useState([]);
-   useEffect(() => {
+
+  const [conversations, setConversations] = useState([]);
+  useEffect(() => {
     const fetchGroups = async () => {
       try {
         const res = await getUserGroupsWithLastMessage(); // API CALL
         console.log("API GROUPS:", res);
         groupId = res.groupId;
-      
+
 
         // Convert backend format → your UI format
         const formatted = res.map((g) => ({
           id: g.groupId,
           name: g.name,
           // avatar: "https://ui-avatars.com/api/?name=" + g.name,
-          avatar:g.avatar,
+          avatar: g.avatar,
           lastMessage: g.lastMessage?.text || "No messages yet",
           timestamp: g.lastMessage
             ? new Date(g.lastMessage.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
+              hour: "2-digit",
+              minute: "2-digit",
+            })
             : "",
           unreadCount: 0,
           isUrgent: false,
@@ -101,16 +101,16 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
 
     fetchGroups();
   }, []);
-    const [quickReplies] = useState([
-      'Great work! 👏',
-      'Keep it up!',
-      'See you at training'
-    ]);
-  
+  const [quickReplies] = useState([
+    'Great work! 👏',
+    'Keep it up!',
+    'See you at training'
+  ]);
+
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-white md:w-auto md:chat-sidebar">
-      <ChatNavigation/>
+      <ChatNavigation />
       {/* Header - Fixed */}
       <div className="flex-shrink-0 p-3 sm:p-4 border-b border-gray-200 bg-white z-10 shadow-sm">
         <div className="flex items-center justify-between mb-2">
@@ -136,9 +136,9 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
           <input
             type="text"
             placeholder="Search conversations..."
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black text-base bg-white"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black text-base bg-white dark:text-gray-600"
           />
-          <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
@@ -149,11 +149,10 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                activeFilter === filter
-                  ? 'bg-black text-white shadow-sm'
-                  : 'text-gray-700 hover:bg-gray-100 bg-gray-50'
-              }`}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${activeFilter === filter
+                ? 'bg-black text-white shadow-sm'
+                : 'text-gray-700 hover:bg-gray-100 bg-gray-50'
+                }`}
             >
               {filter}
             </button>
@@ -168,14 +167,13 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
             key={conversation.id}
             onClick={() => {
               // onSelectConversation(conversation.id);
-          
+
               // setShowChat(true);
-             router.push(`/chatMsg/${conversation.id}`);
+              router.push(`/chatMsg/${conversation.id}`);
 
             }}
-            className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
-              selectedConversation === conversation.id ? 'bg-gray-100 border-l-4 border-l-black' : ''
-            }`}
+            className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${selectedConversation === conversation.id ? 'bg-gray-100 border-l-4 border-l-black' : ''
+              }`}
           >
             <div className="flex items-start space-x-3">
               <div className="relative">
@@ -260,7 +258,7 @@ const Conversations = ({ selectedConversation, onSelectConversation }) => {
             <IoCall className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="text-sm sm:text-base font-medium mt-1">Calls</span>
           </button>
-          
+
           <button className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 sm:px-3 bg-black text-white rounded-lg hover:opacity-90 transition-opacity">
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

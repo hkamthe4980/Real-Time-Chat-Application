@@ -1,204 +1,3 @@
-
-// "use client";
-
-// import React, { useState, useEffect } from "react";
-// import { useParams } from "next/navigation";
-// import ChatHeader from "@/components/ChatHeader";
-// import ChatMain from "@/components/ChatMain";
-// import ChatInput from "@/components/ChatInput";
-// import { getGroupMessages, sendGroupMessage, getGroupDetails } from "@/utils/api";
-// import { jwtDecode } from "jwt-decode";
-// import { useRouter } from "next/navigation";
-
-// const ChatMsg = () => {
-//   const params = useParams();
-//   const router = useRouter();
-//   const groupId = params.id;
-
-//   // Get logged-in UserId from token stored in localStorage
-//   const [loggedInUserId, setLoggedInUserId] = useState(null);
-//   const [username, setuserName] = useState("")
-//   //? store grp details
-//   const [groupData, setGroupData] = useState(null); 
-//   console.log("UserName from decode token", username)
-
-
-//   //? get logged-in user details
-//   useEffect(() => {
-//     if (typeof window !== "undefined") {
-//       const token = localStorage.getItem("token");
-//       if (token) {
-//         const decoded = jwtDecode(token);
-//         console.log("decoded data", decoded)
-//         setLoggedInUserId(decoded.id);
-//         setuserName(decoded.name)
-//       }
-//     }
-//   }, []);
-
-//   //? fetch grp details 
-//   useEffect(() => {
-//     if (groupId) {
-//       const fetchGroup = async () => {
-//         try {
-//           const data = await getGroupDetails(groupId);
-//           setGroupData(data);
-//         } catch (error) {
-//           console.error("Error fetching group details:", error);
-//         }
-//       };
-//       fetchGroup();
-//     }
-//   }, [groupId]);
-//   console.log("groupData", groupData);
-
-//   const [messages, setMessages] = useState([]);
-//   // console.log("messages", messages)
-
-//   // ⭐ Convert backend → UI format
-//   const mapMessage = (msg) => {
-//     let senderId = "";
-//     let senderName = "";
-
-//     // ⭐ Case 1: Normal API message → sender is OBJECT
-//     if (msg.sender && typeof msg.sender === "object") {
-//       senderId = msg.sender._id;
-//       senderName = msg.sender.name;
-//     }
-
-//     // ⭐ Case 2: SSE message → sender is STRING + name field
-//     if (typeof msg.sender === "string") {
-//       senderId = msg.sender;
-//       senderName = msg.name || "Unknown";
-//     }
-
-//     return {
-//       id: msg._id,
-//       sender: {
-//         _id: senderId,
-//         name: senderName,
-//       },
-//       text: msg.text,
-//       content: msg.text,
-//       name: senderName,
-//       timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
-//         hour: "2-digit",
-//         minute: "2-digit",
-//       }),
-//       createdAt: msg.createdAt,
-//       mentions: msg.mentions || [],
-//     };
-//   };
-
-
-//   // ⭐ Load initial messages
-//   //? fetch messages from backend
-//   useEffect(() => {
-//     if (!groupId || !loggedInUserId) return;
-
-//     const loadMessages = async () => {
-//       try {
-//         const data = await getGroupMessages(groupId);
-//         console.log("normal messages", data);
-//         setMessages(data.map(mapMessage));
-
-//       } catch (err) {
-//         console.log("Error loading messages", err);
-//       }
-//     };
-
-//     loadMessages();
-//   }, [groupId, loggedInUserId]);
-
-
-
-//   useEffect(() => {
-//     if (!groupId || !loggedInUserId) return;
-
-//     const es = new EventSource(
-//       `http://localhost:5001/api/sse/stream/${groupId}`
-//     );
-
-//     es.onmessage = (event) => {
-//       console.log("data in even ", event.data)
-//       const backendMsg = JSON.parse(event.data);
-//       if (backendMsg.sender === loggedInUserId) {
-//         return;
-//       }
-//       console.log("SSE message", backendMsg);
-
-//       setMessages((prev) => [...prev, mapMessage(backendMsg)]);
-//     };
-
-//     es.onerror = () => {
-//       console.log("❌ SSE disconnected");
-//       es.close();
-//     };
-
-//     return () => es.close();
-//   }, [groupId, loggedInUserId]);
-
-
-//   // ⭐ Handle send message (UI only, no backend send included)
-//   const handleSendMessage = async (text, options = {}) => {
-//     const { mentions = [], isUrgent = false } = options;
-
-//     // optimistic message...
-//     const optimisticMsg = {
-//       id: "local-" + Date.now(),
-//       sender: loggedInUserId,
-//       senderName: username,
-//       content: text,
-//       mentions,
-//       timestamp: new Date().toLocaleTimeString([], {
-//         hour: "2-digit",
-//         minute: "2-digit"
-//       })
-//     };
-
-//     setMessages((prev) => [...prev, optimisticMsg]);
-//     // console.log("groupId in chatInput", groupId)
-
-//     const payload = {
-//       groupId,
-//       sender: loggedInUserId,
-//       text,
-//       mentions,
-//       isUrgent,
-//       name: username
-//     };
-
-//     await sendGroupMessage(payload);
-//   };
-
-
-//   return (
-//     <div className="flex flex-col h-screen w-full overflow-hidden bg-gray-50">
-//       <ChatHeader 
-//         conversation={{ name: groupData?.name, id: groupId, avatar: groupData?.avatar }} 
-//         // onClick={() => router.push(`/profile?groupId=${groupId}`)}
-//       />
-
-//       <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
-//         <ChatMain
-//           messages={messages}
-//           userId={loggedInUserId}
-//         />
-//       </div>
-
-//       <ChatInput onSendMessage={handleSendMessage} groupId={groupId} />
-//     </div>
-//   );
-// };
-
-// export default ChatMsg;
-
-
-
-
-
-
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -259,8 +58,11 @@ const ChatMsg = () => {
 
   const [messages, setMessages] = useState([]);
   // console.log("messages", messages)
-  //? vaish
+
   const [typingUsers, setTypingUsers] = useState([]);
+
+  //? user online status
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
 
   //? ⭐ Convert backend → UI format - Vaish
@@ -322,34 +124,67 @@ const ChatMsg = () => {
   useEffect(() => {
     if (!groupId || !loggedInUserId) return;
 
+    //? change SSE back, so it expects token data to perform authentication 
+    //? grab token from localStorage
+    const token = localStorage.getItem("token");
+
     const es = new EventSource(
-      `http://localhost:5001/api/sse/stream/${groupId}`
+      //? add token to the URL
+      `http://localhost:5001/api/sse/stream/${groupId}?token=${token}`
     );
 
-    es.onmessage = (event) => {
-      // console.log("🔥 RAW SSE:", event.data);
+    // ----------------------------------------------------
+    // ⭐ NAMED EVENTS LISTENERS
+    // ----------------------------------------------------
+    // 1. Initial Presence State
+    //? Gets list of all users already online in this group
+    es.addEventListener("initial_presence_state", (event) => {
+      const users = JSON.parse(event.data);
+      setOnlineUsers(users);
+    });
+
+    // 2. User Joined
+    //? update state when a new user joins the group
+    es.addEventListener("user_joined", (event) => {
+      const newUser = JSON.parse(event.data);
+      setOnlineUsers((prev) => {
+        //? if userId is present in onlineUsers array then no need to add it again to the array
+        //? helps when user is online from multiple tabs
+        if (prev.some((u) => u.userId === newUser.userId)) return prev;
+        return [...prev, newUser];
+      });
+    });
+
+    // 3. User Left
+    //? update state when a user leaves the group
+    es.addEventListener("user_left", (event) => {
+      const { userId } = JSON.parse(event.data);
+      setOnlineUsers((prev) => prev.filter((u) => u.userId !== userId));
+    });
+
+    // 4. Typing Event
+    es.addEventListener("typing", (event) => {
       const data = JSON.parse(event.data);
-      console.log("🔥 RAW SSE --------:", data);
-
-      // ----------------------------------------------------
-      // ⭐ TYPING EVENT
-      // ----------------------------------------------------
-      if (data.type === "typing") {
-        if (data.senderId !== loggedInUserId) {
-          if (data.typing) {
-            // show typing
-            setTypingUsers([
-              { senderId: data.senderId, name: data.userName, avatar: data.userAvatar },
-            ]);
-          } else {
-            // hide typing
-            setTypingUsers([]);
-          }
+      if (data.senderId !== loggedInUserId) {
+        if (data.typing) {
+          // show typing
+          setTypingUsers([
+            { senderId: data.senderId, name: data.userName, avatar: data.userAvatar },
+          ]);
+        } else {
+          // hide typing
+          setTypingUsers([]);
         }
-        return; // do NOT treat as message
       }
+    });
 
-      // BEFORE normal message section
+    // 5. New Message Event
+    es.addEventListener("new_message", (event) => {
+      const data = JSON.parse(event.data);
+      const incomingSender = data.sender || data.senderId;
+
+      if (incomingSender === loggedInUserId) return;
+
       if (data.type === "file" || data.type === "audio") {
         setMessages((prev) => [
           ...prev,
@@ -366,33 +201,58 @@ const ChatMsg = () => {
             }),
           },
         ]);
-        return;
+      } else {
+        setMessages((prev) => [...prev, mapMessage(data)]);
       }
-
-
-      // ----------------------------------------------------
-      //? ⭐ NORMAL MESSAGE
-      // ----------------------------------------------------
-      const incomingSender = data.sender || data.senderId;
-
-      if (incomingSender === loggedInUserId) return;
-
-      setMessages((prev) => [...prev, mapMessage(data)]);
-    };
-
+    });
 
     es.onerror = () => {
       console.log("❌ SSE Disconnected");
       es.close();
     };
 
+    // console.log("onlineUsers", onlineUsers);
+
     return () => es.close();
+    //todo: when onlineUsers state is added in dependancy arr, console goes crazy- too many re-renders
   }, [groupId, loggedInUserId]);
 
 
   // -------------------------------------------------------
-  //? ⭐ Send message - vaish
+  //? ⭐ Send message
   // -------------------------------------------------------
+  // ⭐ Centralized Message Handler
+  const addMessageToState = (msg) => {
+    let senderInfo;
+    // if the msg var has info about sender 
+    if (msg.sender && msg.sender._id) {
+      // Use existing sender info
+      senderInfo = msg.sender;
+    }
+    else {
+      // If missing, use the current user's info for now
+      senderInfo = {
+        _id: loggedInUserId,
+        name: username,
+        avatar: userAvatar,
+      }
+    }
+    // Create a new message object with the sender info included
+    const enrichedMsg = {
+      ...msg,
+      sender: senderInfo,
+    }
+
+    // Check if the message is already in UI format (Optimistic) or needs mapping (Backend)
+    // Optimistic messages already have 'id' and 'content'
+    // Backend messages have '_id' and 'text'
+    if (enrichedMsg.id && enrichedMsg.content !== undefined) {
+      setMessages((prev) => [...prev, enrichedMsg]);
+    } else {
+      setMessages((prev) => [...prev, mapMessage(enrichedMsg)]);
+    }
+  };
+
   const handleSendMessage = async (text, options = {}) => {
     const { mentions = [], isUrgent = false } = options;
 
@@ -408,7 +268,7 @@ const ChatMsg = () => {
       mentions,
     };
 
-    setMessages((prev) => [...prev, optimisticMsg]);
+    addMessageToState(optimisticMsg);
     // console.log("groupId in chatInput", groupId)
 
     // Actual backend request
@@ -428,6 +288,7 @@ const ChatMsg = () => {
     <div className="flex flex-col h-screen w-full overflow-hidden bg-gray-50">
       <ChatHeader
         conversation={{ name: groupData?.name, id: groupId, avatar: groupData?.avatar }}
+        onlineCount={onlineUsers.length} // ⭐ Pass online count
       // onClick={() => router.push(`/profile?groupId=${groupId}`)}
       />
 
@@ -439,22 +300,28 @@ const ChatMsg = () => {
         />
         {typingUsers.length > 0 && (
           <div className="flex items-end space-x-2 mb-3 px-2">
+            {typingUsers.length === 1
+              ? (<p className="text-sm font-bold text-emerald-500 ml-2"> {typingUsers.map((user) => user.name)} is typing... </p>)
+              : (<p className="text-sm font-bold text-emerald-500 ml-2">
+                {typingUsers.map((user) => user.name).join(", ")} are typing...
+              </p>)
+            }
 
             {/* Avatar */}
-            <img
+            {/* <img
               src={typingUsers[0].avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(typingUsers[0].name)}&background=52D137&color=FFFFFF`}
               alt="avatar"
               className="w-8 h-8 rounded-full object-cover ml-2"
-            />
+            /> */}
 
             {/* Typing Bubble */}
-            <div className="bg-white border border-gray-300 rounded-2xl rounded-bl-sm px-3 py-2 shadow-sm flex items-center max-w-[75%]">
+            {/* <div className="bg-white border border-gray-300 rounded-2xl rounded-bl-sm px-3 py-2 shadow-sm flex items-center max-w-[75%]">
               <div className="flex space-x-1">
                 <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></span>
                 <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-150"></span>
                 <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-300"></span>
               </div>
-            </div>
+            </div> */}
           </div>
         )}
       </div>
@@ -462,6 +329,7 @@ const ChatMsg = () => {
       {/* Input- ChatInput */}
       <ChatInput
         onSendMessage={handleSendMessage}
+        onMessageSuccess={addMessageToState}
         groupId={groupId}
         senderId={loggedInUserId}
         userName={username}

@@ -1,10 +1,17 @@
+/*
+  - Defines Express routes for messaging actions: send message (/send), fetch group messages (/group/:groupId), get user groups (/get-groups).
+  - Adds a /typing route to broadcast typing events to group members via SSE (broadcastToGroup).
+  - Adds an /upload route that accepts a single file (multiplied by multer), saves a message document to DB, and broadcasts a new_message SSE event with file metadata (and optional transcription).
+*/
 
 import express from "express";
 import multer from "multer";
 import {
   sendMessage,
   getGroupMessages,
-  getUserGroupsWithLastMessage
+  getUserGroupsWithLastMessage,
+  editMessage,
+  deleteMessage,
 } from "../controller/messageController.js";
 
 import { verifyToken } from "../middleware/authMiddleware.js";
@@ -19,6 +26,11 @@ router.post("/send", verifyToken, sendMessage);
 router.get("/group/:groupId", getGroupMessages);
 router.get("/get-groups", verifyToken, getUserGroupsWithLastMessage);
 
+//* Edit Msg
+router.patch("/edit/:id", verifyToken, editMessage);
+
+//* Delete Msg
+router.delete("/delete/:id", verifyToken, deleteMessage);
 
 /* -----------------------------------------------------------
     ⭐ MULTER STORAGE FOR FILE UPLOADS
@@ -31,11 +43,15 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+
+/*
+  - Adds a /typing route to broadcast typing events to group members via SSE (broadcastToGroup).
+*/
 // ⭐ TYPING ROUTE FIXED
 router.post("/typing", (req, res) => {
   const { groupId, senderId, typing, userName, userAvatar } = req.body;
 
-  broadcastToGroup(groupId, {
+  broadcastToGroup(groupId, "typing", {
     type: "typing",
     senderId,
     userName,
@@ -47,6 +63,11 @@ router.post("/typing", (req, res) => {
 });
 
 
+
+/*
+  - Adds an /upload route that accepts a single file (multiplied by multer), saves a message document to DB, and broadcasts a new_message SSE event with file metadata (and optional transcription).
+*/
+//* upload route
 router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   try {
     const file = req.file;
@@ -81,18 +102,18 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     });
 
     // ⭐ BROADCAST USING SSE
-    broadcastToGroup(groupId, {
+    broadcastToGroup(groupId, "new_message", {
       _id: message._id,
       groupId,
       sender: senderId,
       name,
       userAvatar: avatar, // ⭐ Include avatar for frontend
-      type: message.type || message.type || "file",        // 👈 IMPORTANT for frontend
+      type: message.type || "file",        // 👈 IMPORTANT for frontend
       fileUrl: message.fileUrl,
       fileName: message.fileName,
       fileSize: message.fileSize,
       fileType: message.fileType,
-      fileType: file.mimetype,
+      // fileType: file.mimetype,
       // transcription: message.transcription, // null for now
 
       ...(message.transcription

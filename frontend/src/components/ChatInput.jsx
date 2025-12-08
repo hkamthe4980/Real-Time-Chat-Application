@@ -8,7 +8,7 @@ import { jwtDecode } from "jwt-decode";
 import { AiOutlinePaperClip } from "react-icons/ai";
 import { FaMicrophone } from "react-icons/fa";
 
-const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) => {
+const ChatInput = ({ onSendMessage, onMessageSuccess, groupId, senderId, userName, userAvatar }) => {
   // console.log("ChatInput Props - userAvatar:", userAvatar);
   const [text, setText] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
@@ -18,6 +18,11 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
   const [showDropdown, setShowDropdown] = useState(false);
 
   const inputRef = useRef(null);
+  //? Typing Debounce Refs:
+  // Tracks the active timer ID so we can cancel it
+  const typingTimeoutRef = useRef(null);
+  // Tracks if we have already sent "true" to the backend, so we don't send it 100 times
+  const isTypingRef = useRef(false);
 
   const fileRef = useRef(null); // ⭐ ADDED
   const imageRef = useRef(null);
@@ -81,20 +86,48 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
     }
   };
 
-  // ⭐ When user clicks input → start typing indicator
+  // ⭐ When user clicks input → DO NOTHING (Wait for actual typing)
   const handleFocus = () => {
-    sendTypingStatus(true);
+    // sendTypingStatus(true); // 👈 REMOVED
   };
 
-  // ⭐ When user clicks away → stop typing indicator
+  // ⭐ When user clicks away → stop typing immediately
   const handleBlur = () => {
-    sendTypingStatus(false);
+    // If we were marked as typing, stop it immediately.
+    if (isTypingRef.current) {
+      sendTypingStatus(false);
+      isTypingRef.current = false;
+
+      // Cancel the pending 2-second timer since we handled it manually here
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    }
   };
 
   // ⭐ Handle text + mentions
   const handleInputChange = async (e) => {
     const value = e.target.value;
     setText(value);
+
+    // ⭐ TYPING INDICATOR LOGIC (DEBOUNCED)
+    // 1. If not already typing, send "true"
+    // If we haven't told the server we are typing yet, do it now.
+    if (!isTypingRef.current) {
+      sendTypingStatus(true);
+      isTypingRef.current = true;
+    }
+
+    // 2. Clear existing timeout (reset the timer)
+    // If there was a timer counting down to "stop typing", cancel it.
+    // We are still typing, so we need more time!
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // 3. Set new timeout to stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      sendTypingStatus(false);
+      isTypingRef.current = false;
+    }, 2000);
 
     const lastAt = value.lastIndexOf("@");
 
@@ -151,7 +184,12 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
     setShowDropdown(false);
 
     // After sending message → hide typing
-    sendTypingStatus(false);
+    // After sending message → hide typing
+    if (isTypingRef.current) {
+      sendTypingStatus(false);
+      isTypingRef.current = false;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    }
 
     // And focus again
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -205,6 +243,11 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
     if (!response.ok) {
       console.error("Upload failed:", await response.text());
       return;
+    }
+
+    const data = await response.json();
+    if (onMessageSuccess) {
+      onMessageSuccess(data);
     }
 
     // Reset preview
@@ -367,6 +410,11 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
       return;
     }
 
+    const data = await res.json();
+    if (onMessageSuccess) {
+      onMessageSuccess(data);
+    }
+
     // reset audio preview
     setPendingAudio(null);
     if (audioPreviewUrl) {
@@ -383,9 +431,11 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
     }
   };
 
+  // console.log("results--------", results);
+
 
   return (
-    <div className="relative bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-2px_6px_rgba(0,0,0,0.05)]">
+    <div className="relative bg-white border-t border-gray-200 px-4 pt-3 pb-[6px] shadow-[0_-2px_6px_rgba(0,0,0,0.05)]">
 
       {/* ⭐ FLOATING WHATSAPP-STYLE FILE PREVIEW (EXISTING) */}
       {pendingFile && (
@@ -429,7 +479,7 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
           <div className="flex justify-between gap-2 mt-1">
             <button
               onClick={cancelAudio}
-              className="flex-1 border border-gray-300 rounded-lg py-1 text-sm"
+              className="flex-1 border border-gray-300 rounded-lg py-1 text-sm dark:text-black"
             >
               Cancel
             </button>
@@ -460,20 +510,20 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
       />
 
       <form onSubmit={handleSubmit} className="w-full">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-end space-x-2">
 
-          {/* Attachment Button + Menu (unchanged UI, just using refs) */}
-          <div className="relative">
+          {/* Attachment Button + Menu */}
+          <div className="relative pb-1">
             <button
               type="button"
               onClick={() => setShowAttachMenu((prev) => !prev)}
-              className="min-w-11 min-h-11 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition active:scale-95 shadow-md"
+              className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition active:scale-95 shadow-md "
             >
               <AiOutlinePaperClip className="text-white text-xl" />
             </button>
 
             {showAttachMenu && (
-              <div className="absolute bottom-14 left-0 bg-white border border-gray-300 rounded-xl shadow-xl py-2 w-40 z-50">
+              <div className="absolute bottom-14 left-0 bg-white border border-gray-300 rounded-xl shadow-xl py-2 w-40 z-50 dark:text-gray-700">
                 <button
                   type="button"
                   onClick={() => {
@@ -518,51 +568,70 @@ const ChatInput = ({ onSendMessage, groupId, senderId, userName, userAvatar }) =
               onFocus={handleFocus}
               onBlur={handleBlur}
               placeholder="Type a message..."
-              className="w-full bg-gray-100 border border-gray-300 rounded-2xl px-4 py-3 text-[15px] leading-snug resize-none focus:outline-none focus:ring-2 focus:ring-black max-h-[120px]"
+              className="w-full bg-gray-100 border border-gray-300 rounded-3xl px-5 py-3 pr-12 text-[15px] leading-snug resize-none focus:outline-none focus:ring-2 focus:ring-black min-h-[48px] max-h-[120px] dark:text-gray-700 scrollbar-hide"
               rows="1"
             />
 
             {/* Mentions Dropdown */}
             {showDropdown && results.length > 0 && (
-              <div className="absolute left-0 bottom-[52px] z-50 w-full bg-white border border-gray-300 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute left-0 bottom-[52px] z-50 w-full bg-white border border-gray-300 rounded-xl shadow-lg max-h-64 overflow-y-auto">
                 {results.map((user) => (
                   <div
                     key={user._id}
                     onClick={() => handleSelectMention(user)}
-                    className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-[14px]"
+                    className="px-4 cursor-pointer hover:bg-gray-100 text-base dark:text-black flex gap-4 overflow-hidden"
                   >
-                    {user.name}
+                    {/* Avatar */}
+                    <img
+                      src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=52D137&color=FFFFFF`}
+                      alt="user avatar"
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover self-center my-3"
+                    />
+                    <div className="flex-1 border-b border-gray-200 flex items-center">
+                      <span className="text-black font-medium">{user.name}</span>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
 
+            {/* ⭐ MIC BUTTON (INSIDE INPUT) */}
+            <button
+              type="button"
+              onClick={toggleRecording}
+              className={`absolute right-2 bottom-3 w-9 h-9 flex items-center justify-center rounded-full transition active:scale-95 ${isRecording ? "text-red-500 bg-red-100" : "text-gray-500 hover:text-black hover:bg-gray-200"
+                }`}
+            >
+              <FaMicrophone className="text-lg" />
+            </button>
+          </div>
           {/* ⭐ MIC BUTTON (NEW) */}
-          <button
+          {/* <button
             type="button"
             onClick={toggleRecording}
             className={`min-w-11 min-h-11 rounded-full flex items-center justify-center shadow-md transition active:scale-95 ${isRecording ? "bg-red-500" : "bg-black"
               } text-white`}
           >
             <FaMicrophone className="text-xl" />
-          </button>
+          </button> */}
+
 
           {/* Send Button (same line) */}
           <button
             type="submit"
-            className="min-w-11 min-h-11 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition active:scale-95 shadow-md"
+            className="min-w-12 min-h-12 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition active:scale-95 shadow-md mb-1"
           >
             <IoMdSend className="text-white text-xl ml-1" />
           </button>
 
         </div>
-      </form>
-    </div>
+      </form >
+    </div >
 
 
   );
 };
 
 export default ChatInput;
-
